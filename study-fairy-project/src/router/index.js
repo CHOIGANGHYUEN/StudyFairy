@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
-import HomeView from "../views/HomeView.vue";
-import LoginView from "../views/LoginView.vue";
+import HomeView from "../views/home/HomeView.vue";
 import SummaryView from "../views/SummaryView.vue";
 import EmptyView from "../views/EmptyView.vue"; // 새 탭용 빈 뷰 임포트
 
@@ -11,11 +10,6 @@ const router = createRouter({
       path: "/",
       name: "home",
       component: HomeView,
-    },
-    {
-      path: "/login",
-      name: "login",
-      component: LoginView,
     },
     {
       path: "/summary",

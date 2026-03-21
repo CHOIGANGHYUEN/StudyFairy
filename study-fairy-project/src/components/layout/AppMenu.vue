@@ -11,12 +11,29 @@
 </template>
 
 <script setup>
-defineProps({
-  tabs: {
-    type: Array,
-    required: true,
-    default: () => [],
-  },
+import { ref, onMounted } from "vue";
+
+// 탭 데이터를 저장할 반응형 변수
+const tabs = ref([]);
+
+// 백엔드에서 메뉴 목록을 가져오는 함수
+const fetchMenus = async () => {
+  try {
+    // 백엔드 서버 주소와 포트(3000)가 맞는지 확인하세요.
+    const response = await fetch("http://localhost:3000/api/menus");
+    if (response.ok) {
+      tabs.value = await response.json(); // 가져온 데이터를 tabs 변수에 넣음
+    } else {
+      console.error("메뉴 데이터를 불러오는데 실패했습니다.");
+    }
+  } catch (error) {
+    console.error("API 연결 오류:", error);
+  }
+};
+
+// 컴포넌트가 마운트(화면에 렌더링)될 때 데이터 가져오기 실행
+onMounted(() => {
+  fetchMenus();
 });
 </script>
 
@@ -36,7 +53,7 @@ defineProps({
 }
 
 .tab-item {
-  margin-bottom: -1px; /* 부모 컨테이너의 bottom-border와 겹치게 하여 선택된 탭 효과 강조 */
+  margin-bottom: -1px;
 }
 
 .tab-link {

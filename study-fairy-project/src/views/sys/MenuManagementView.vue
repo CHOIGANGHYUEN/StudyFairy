@@ -77,7 +77,19 @@
             </div>
           </div>
         </div>
-
+        <!-- 메뉴 ID -->
+        <div class="form-group">
+          <label for="menuId">상위 ID</label>
+          <div class="input-wrapper">
+            <input
+              type="text"
+              id="parentMenuId"
+              v-model="newMenu.parentMenuId"
+              placeholder="예: MENU_001"
+              :disabled="isSubmitting"
+            />
+          </div>
+        </div>
         <div class="form-actions">
           <button
             type="submit"
