@@ -9,6 +9,7 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  debug: ["ComQueryPacket", "RowDataPacket"], // 👈 디버그 관련 패킷 출력 옵션 추가
 });
 
 // 연결 테스트

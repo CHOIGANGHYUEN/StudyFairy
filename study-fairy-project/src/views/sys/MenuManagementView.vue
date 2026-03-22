@@ -57,7 +57,7 @@
                   :key="lang.langu"
                   :value="lang.langu"
                 >
-                  {{ lang.langNm }} ({{ lang.langu }})
+                  {{ lang.languNm }} ({{ lang.langu }})
                 </option>
               </select>
             </div>

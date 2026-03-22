@@ -17,8 +17,10 @@ app.use(express.json()); // JSON 형태의 요청 body 파싱
 // 라우터 설정
 const userRoutes = require("./routes/userRoutes");
 const menuRoutes = require("./routes/menuRoutes"); // 추가
+const languageRoutes = require("./routes/languageRoutes"); // 추가
 app.use("/api/users", userRoutes);
 app.use("/api/menus", menuRoutes); // 추가
+app.use("/api/languages", languageRoutes); // 추가
 
 // 기본 라우트 (테스트용)
 app.get("/", (req, res) => {

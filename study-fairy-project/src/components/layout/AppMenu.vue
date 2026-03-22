@@ -58,6 +58,7 @@ const fetchMenus = async () => {
     if (!response.ok) throw new Error("Network response was not ok");
     const data = await response.json();
     menus.value = data;
+    console.log("메뉴 트리 로드 완료:", data);
   } catch (error) {
     console.error("메뉴 트리 로드 실패:", error);
   }

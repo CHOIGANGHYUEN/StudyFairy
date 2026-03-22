@@ -93,6 +93,7 @@
               <th>생성자</th>
               <th>생성일시</th>
               <th>수정자</th>
+              <th>관리</th>
             </tr>
           </thead>
           <tbody>
@@ -105,9 +106,18 @@
               <td>{{ lang.createdBy || "SYSTEM" }}</td>
               <td>{{ formatDate(lang.createdAt) }}</td>
               <td>{{ lang.changedBy || "-" }}</td>
+              <td>
+                <button
+                  @click="handleDelete(lang.id)"
+                  class="btn-delete"
+                  :disabled="isSubmitting"
+                >
+                  삭제
+                </button>
+              </td>
             </tr>
             <tr v-if="languages.length === 0">
-              <td colspan="6" class="empty-state">
+              <td colspan="7" class="empty-state">
                 등록된 언어 정보가 없습니다.
               </td>
             </tr>
@@ -139,30 +149,21 @@ onMounted(() => {
   fetchLanguages();
 });
 
+// 1. 언어 목록 조회 (백엔드 API 연동)
 const fetchLanguages = async () => {
-  // 초기 Mock 데이터 (테이블 인덱스 3 기준 시뮬레이션)
-  languages.value = [
-    {
-      id: 1,
-      langu: "ko",
-      languNm: "한국어",
-      createdBy: "SYSTEM",
-      createdAt: new Date("2024-01-01").toISOString(),
-      changedBy: "ADMIN",
-      changedAt: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      langu: "en",
-      languNm: "English",
-      createdBy: "SYSTEM",
-      createdAt: new Date("2024-01-01").toISOString(),
-      changedBy: "ADMIN",
-      changedAt: new Date().toISOString(),
-    },
-  ];
+  try {
+    const response = await fetch("http://localhost:3000/api/languages");
+    if (!response.ok) throw new Error("데이터를 불러오는데 실패했습니다.");
+
+    const data = await response.json();
+    languages.value = data;
+  } catch (error) {
+    console.error("언어 목록 조회 에러:", error);
+    alert("언어 목록을 불러오는 중 오류가 발생했습니다.");
+  }
 };
 
+// 2. 언어 등록 (백엔드 API 연동)
 const handleRegister = async () => {
   if (!isValid.value) return;
 
@@ -172,28 +173,56 @@ const handleRegister = async () => {
     const registrationData = {
       langu: newLang.value.langu,
       languNm: newLang.value.languNm,
-      createdBy: "ADMIN", // 실제 환경에서는 로그인된 사용자 정보
-      createdAt: new Date().toISOString(),
-      changedBy: "ADMIN",
-      changedAt: new Date().toISOString(),
+      createdBy: "ADMIN", // 실제 환경에서는 인증된 사용자 ID를 주입하세요
     };
 
-    // API 통신 시뮬레이션
-    await new Promise((resolve) => setTimeout(resolve, 600));
-
-    languages.value.unshift({
-      id:
-        languages.value.length > 0
-          ? Math.max(...languages.value.map((l) => l.id)) + 1
-          : 1,
-      ...registrationData,
+    const response = await fetch("http://localhost:3000/api/languages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(registrationData),
     });
 
-    // 입력창 초기화
+    if (response.status === 409) {
+      alert("이미 존재하는 언어 코드입니다. 다른 코드를 입력해주세요.");
+      return;
+    }
+
+    if (!response.ok) throw new Error("등록 요청 실패");
+
+    // 성공 시 입력창 초기화
     newLang.value = { langu: "", languNm: "" };
     alert("새로운 언어가 성공적으로 등록되었습니다.");
+
+    // DB에서 최신 목록을 다시 불러오기
+    await fetchLanguages();
   } catch (error) {
+    console.error("언어 등록 에러:", error);
     alert("언어 등록 중 오류가 발생했습니다.");
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
+// 3. 언어 삭제 (백엔드 API 연동 추가)
+const handleDelete = async (id) => {
+  if (!confirm("정말로 이 언어를 삭제하시겠습니까?")) return;
+
+  isSubmitting.value = true;
+  try {
+    const response = await fetch(`http://localhost:3000/api/languages/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) throw new Error("삭제 요청 실패");
+
+    alert("성공적으로 삭제되었습니다.");
+    // 삭제 후 최신 목록 갱신
+    await fetchLanguages();
+  } catch (error) {
+    console.error("언어 삭제 에러:", error);
+    alert("언어 삭제 중 오류가 발생했습니다.");
   } finally {
     isSubmitting.value = false;
   }
@@ -202,7 +231,7 @@ const handleRegister = async () => {
 const formatDate = (date) => {
   if (!date) return "-";
   const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 </script>
 
@@ -237,7 +266,7 @@ const formatDate = (date) => {
 .icon {
   width: 1.5rem;
   height: 1.5rem;
-  color: #0891b2; /* 지구본 아이콘에 어울리는 Cyan 색상 */
+  color: #0891b2;
 }
 
 .page-subtitle {
@@ -274,7 +303,7 @@ const formatDate = (date) => {
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 2fr; /* 코드와 이름의 길이를 고려한 비율 */
+  grid-template-columns: 1fr 2fr;
   gap: 1.5rem;
 }
 
@@ -370,6 +399,7 @@ const formatDate = (date) => {
   padding: 1rem;
   border-bottom: 1px solid #f1f5f9;
   color: #334155;
+  vertical-align: middle;
 }
 
 .lang-code-badge {
@@ -395,6 +425,28 @@ const formatDate = (date) => {
 
 .user-table tr:hover td {
   background-color: #f8fafc;
+}
+
+/* 추가된 삭제 버튼 스타일 */
+.btn-delete {
+  background: none;
+  border: none;
+  color: #ef4444; /* Tailwind red-500 */
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: all 0.2s;
+}
+
+.btn-delete:hover:not(:disabled) {
+  background-color: #fef2f2; /* Tailwind red-50 */
+  color: #b91c1c; /* Tailwind red-700 */
+}
+
+.btn-delete:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
