@@ -20,243 +20,250 @@
         </div>
         메뉴 관리
       </h1>
-      <p class="page-subtitle">
-        시스템 메뉴 및 다국어 정보를 등록하고 관리합니다.
-      </p>
     </header>
 
-    <!-- 메뉴 등록/수정 폼 섹션 -->
     <section class="card-section">
       <div class="card-header flex justify-between items-center">
         <h2 class="section-title">
-          {{ isEditMode ? "메뉴 수정" : "새 메뉴 등록" }}
+          {{ isEditMode ? "메뉴 정보 수정" : "신규 메뉴 등록" }}
         </h2>
         <button
           v-if="isEditMode"
-          @click="cancelEdit"
-          class="text-sm text-blue-600 hover:text-blue-800 font-medium"
+          @click="resetForm"
+          class="text-sm text-blue-600 font-medium"
         >
-          취소하고 신규 등록으로 변경
+          취소 및 신규 전환
         </button>
       </div>
       <form @submit.prevent="handleRegisterOrUpdate" class="registration-form">
         <div class="form-grid">
-          <!-- 언어 코드 -->
+          <!-- 언어 선택 부분 수정 (동적 바인딩) -->
           <div class="form-group">
-            <label for="langu">언어 (Language)</label>
-            <div class="input-wrapper">
-              <select
-                id="langu"
-                v-model="menuForm.langu"
-                :disabled="isSubmitting"
-                required
+            <label>언어 *</label>
+            <select v-model="menuForm.langu" required>
+              <option
+                v-for="lang in availableLanguages"
+                :key="lang.langu"
+                :value="lang.langu"
               >
-                <option value="" disabled>언어를 선택하세요</option>
-                <option
-                  v-for="lang in availableLanguages"
-                  :key="lang.langu"
-                  :value="lang.langu"
-                >
-                  {{ lang.languNm }} ({{ lang.langu }})
-                </option>
-              </select>
-            </div>
+                {{ lang.languNm }} ({{ lang.langu }})
+              </option>
+            </select>
           </div>
 
-          <!-- 메뉴 ID -->
           <div class="form-group">
-            <label for="menuId">메뉴 ID</label>
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="menuId"
-                v-model="menuForm.menuId"
-                placeholder="예: SETTING"
-                required
-                :disabled="isSubmitting || isEditMode"
-              />
-            </div>
+            <label>메뉴 ID *</label>
+            <input
+              type="text"
+              v-model="menuForm.menuId"
+              placeholder="예: M1000"
+              :disabled="isEditMode"
+              required
+            />
           </div>
 
-          <!-- 메뉴명 -->
+          <div class="form-group">
+            <label>메뉴 레벨 *</label>
+            <select
+              v-model.number="menuForm.menuLevel"
+              @change="menuForm.parentMenuId = ''"
+              required
+            >
+              <option :value="1">1단계 (대분류)</option>
+              <option :value="2">2단계 (중분류)</option>
+              <option :value="3">3단계 (소분류)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>상위 메뉴</label>
+            <select
+              v-model="menuForm.parentMenuId"
+              :disabled="menuForm.menuLevel === 1"
+            >
+              <option value="">없음 (최상위)</option>
+              <option
+                v-for="parent in filteredParentOptions"
+                :key="parent.menuId"
+                :value="parent.menuId"
+              >
+                [{{ parent.menuLevel }}단] {{ parent.menuNm }} ({{
+                  parent.menuId
+                }})
+              </option>
+            </select>
+          </div>
+
           <div class="form-group full-width">
-            <label for="menuNm">메뉴명</label>
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="menuNm"
-                v-model="menuForm.menuNm"
-                placeholder="화면에 표시될 메뉴 이름을 입력하세요"
-                required
-                :disabled="isSubmitting"
-              />
-            </div>
+            <label>메뉴명 *</label>
+            <input type="text" v-model="menuForm.menuNm" required />
           </div>
 
-          <!-- 상위 메뉴 ID -->
           <div class="form-group">
-            <label for="parentMenuId">상위 메뉴 ID</label>
-            <div class="input-wrapper">
-              <select
-                id="parentMenuId"
-                v-model="menuForm.parentMenuId"
-                :disabled="isSubmitting"
-              >
-                <option value="">없음 (최상위 메뉴)</option>
-                <option
-                  v-for="menu in topLevelMenus"
-                  :key="menu.menuId"
-                  :value="menu.menuId"
-                  :disabled="menu.menuId === menuForm.menuId"
-                >
-                  {{ menu.menuNm }} ({{ menu.menuId }})
-                </option>
-              </select>
-            </div>
+            <label>경로 (Path)</label>
+            <input
+              type="text"
+              v-model="menuForm.path"
+              placeholder="/example/path"
+            />
           </div>
 
-          <!-- 이동 경로(Path) -->
           <div class="form-group">
-            <label for="path">이동 경로 (Path)</label>
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="path"
-                v-model="menuForm.path"
-                placeholder="예: /sys/users"
-                :disabled="isSubmitting"
-              />
-            </div>
+            <label>순번 *</label>
+            <input
+              type="number"
+              v-model.number="menuForm.ordNum"
+              min="1"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label>사용 여부</label>
+            <select v-model.number="menuForm.useYn">
+              <option :value="1">사용함</option>
+              <option :value="0">사용 안함</option>
+            </select>
           </div>
         </div>
-
-        <div class="form-actions">
-          <button
-            type="submit"
-            class="btn-primary"
-            :disabled="isSubmitting || !isValid"
-          >
-            <span v-if="isSubmitting">처리 중...</span>
-            <span v-else>{{
-              isEditMode ? "정보 수정하기" : "메뉴 등록하기"
-            }}</span>
-          </button>
-        </div>
+        <button type="submit" class="btn-primary" :disabled="isSubmitting">
+          {{
+            isSubmitting
+              ? "처리 중..."
+              : isEditMode
+                ? "정보 수정하기"
+                : "메뉴 등록하기"
+          }}
+        </button>
       </form>
     </section>
 
-    <!-- 메뉴 리스트 테이블 섹션 -->
-    <section class="card-section list-section">
-      <div class="card-header list-header">
-        <h2 class="section-title">등록된 메뉴 목록</h2>
-        <span class="badge">{{ menus.length }}개 항목</span>
-      </div>
-
+    <section class="card-section">
       <div class="table-container">
-        <table class="user-table">
+        <table class="data-table">
           <thead>
             <tr>
-              <th class="w-12 text-center">확장</th>
-              <th>ID</th>
-              <th>언어</th>
-              <th>메뉴 ID</th>
-              <th>메뉴명</th>
-              <th>상위 메뉴</th>
-              <th>경로(Path)</th>
-              <th class="text-center">관리</th>
+              <th class="w-16 text-center">확장</th>
+              <th class="w-16">ID</th>
+              <th>메뉴 체계 (레벨/명칭/ID)</th>
+              <th class="w-20 text-center">순번</th>
+              <th class="w-24 text-center">상태</th>
+              <th class="w-24 text-center">관리</th>
             </tr>
           </thead>
           <tbody>
-            <template v-for="menu in treeMenus" :key="menu.id">
-              <!-- 상위 메뉴 행 -->
-              <tr class="top-level-row">
+            <template v-for="l1 in menuTree" :key="l1.id">
+              <tr class="row-l1">
                 <td class="text-center">
                   <button
-                    v-if="menu.children && menu.children.length > 0"
-                    @click="toggleMenu(menu.menuId)"
+                    v-if="l1.children.length"
+                    @click="toggleMenu(l1.menuId)"
                     class="toggle-btn"
                   >
-                    {{ expandedMenus.includes(menu.menuId) ? "▼" : "▶" }}
+                    {{ expandedMenus.includes(l1.menuId) ? "▼" : "▶" }}
                   </button>
                 </td>
-                <td>{{ menu.id }}</td>
-                <td>
-                  <span class="lang-tag">{{ menu.langu }}</span>
+                <td>{{ l1.id }}</td>
+                <td class="font-bold">
+                  <span class="badge l1">대</span> {{ l1.menuNm }}
+                  <span class="mid">{{ l1.menuId }}</span>
                 </td>
-                <td class="font-mono">{{ menu.menuId }}</td>
-                <td class="font-bold text-blue-900">{{ menu.menuNm }}</td>
-                <td>
-                  <span class="text-slate-400 italic text-xs">최상위</span>
+                <td class="text-center font-bold text-blue-600">
+                  {{ l1.ordNum }}
                 </td>
-                <td class="text-slate-500 italic">{{ menu.path || "-" }}</td>
+                <td class="text-center">
+                  <span
+                    :class="[
+                      'status-badge',
+                      l1.useYn === 1 ? 'active' : 'inactive',
+                    ]"
+                    >{{ l1.useYn === 1 ? "사용" : "미사용" }}</span
+                  >
+                </td>
                 <td class="text-center">
                   <div class="action-buttons">
-                    <button
-                      @click="editMenu(menu)"
-                      class="btn-edit"
-                      title="수정"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      @click="deleteMenu(menu.id)"
-                      class="btn-delete"
-                      title="삭제"
-                    >
+                    <button @click="editMenu(l1)" class="btn-icon">✏️</button>
+                    <button @click="deleteMenu(l1.id)" class="btn-icon">
                       🗑️
                     </button>
                   </div>
                 </td>
               </tr>
-              <!-- 하위 메뉴 행 (부모가 펼쳐진 상태일 때만 표시) -->
-              <template v-if="expandedMenus.includes(menu.menuId)">
-                <tr
-                  v-for="child in menu.children"
-                  :key="child.id"
-                  class="child-level-row"
-                >
-                  <td></td>
-                  <td>{{ child.id }}</td>
-                  <td>
-                    <span class="lang-tag sub-lang">{{ child.langu }}</span>
-                  </td>
-                  <td class="font-mono text-xs">{{ child.menuId }}</td>
-                  <td class="font-medium">
-                    <span class="text-slate-300 ml-4 mr-2">└</span>
-                    {{ child.menuNm }}
-                  </td>
-                  <td>
-                    <span class="badge-sm">{{ child.parentMenuId }}</span>
-                  </td>
-                  <td class="text-slate-500 italic text-xs">
-                    {{ child.path || "-" }}
-                  </td>
-                  <td class="text-center">
-                    <div class="action-buttons">
+              <template v-if="expandedMenus.includes(l1.menuId)">
+                <template v-for="l2 in l1.children" :key="l2.id">
+                  <tr class="row-l2">
+                    <td class="text-center">
                       <button
-                        @click="editMenu(child)"
-                        class="btn-edit"
-                        title="수정"
+                        v-if="l2.children.length"
+                        @click="toggleMenu(l2.menuId)"
+                        class="toggle-btn"
                       >
-                        ✏️
+                        {{ expandedMenus.includes(l2.menuId) ? "▼" : "▶" }}
                       </button>
-                      <button
-                        @click="deleteMenu(child.id)"
-                        class="btn-delete"
-                        title="삭제"
+                    </td>
+                    <td>{{ l2.id }}</td>
+                    <td class="pl-indent-1">
+                      <span class="tree-line">└</span>
+                      <span class="badge l2">중</span> {{ l2.menuNm }}
+                      <span class="mid">{{ l2.menuId }}</span>
+                    </td>
+                    <td class="text-center">{{ l2.ordNum }}</td>
+                    <td class="text-center">
+                      <span
+                        :class="[
+                          'status-badge sm',
+                          l2.useYn === 1 ? 'active' : 'inactive',
+                        ]"
+                        >{{ l2.useYn === 1 ? "사용" : "미사용" }}</span
                       >
-                        🗑️
-                      </button>
-                    </div>
-                  </td>
-                </tr>
+                    </td>
+                    <td class="text-center">
+                      <div class="action-buttons">
+                        <button @click="editMenu(l2)" class="btn-icon">
+                          ✏️
+                        </button>
+                        <button @click="deleteMenu(l2.id)" class="btn-icon">
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <template v-if="expandedMenus.includes(l2.menuId)">
+                    <tr v-for="l3 in l2.children" :key="l3.id" class="row-l3">
+                      <td></td>
+                      <td>{{ l3.id }}</td>
+                      <td class="pl-indent-2">
+                        <span class="tree-line">└</span>
+                        <span class="badge l3">소</span> {{ l3.menuNm }}
+                        <span class="mid">{{ l3.menuId }}</span>
+                      </td>
+                      <td class="text-center text-slate-400">
+                        {{ l3.ordNum }}
+                      </td>
+                      <td class="text-center">
+                        <span
+                          :class="[
+                            'status-badge sm',
+                            l3.useYn === 1 ? 'active' : 'inactive',
+                          ]"
+                          >{{ l3.useYn === 1 ? "사용" : "미사용" }}</span
+                        >
+                      </td>
+                      <td class="text-center">
+                        <div class="action-buttons">
+                          <button @click="editMenu(l3)" class="btn-icon">
+                            ✏️
+                          </button>
+                          <button @click="deleteMenu(l3.id)" class="btn-icon">
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </template>
+                </template>
               </template>
             </template>
-            <tr v-if="menus.length === 0">
-              <td colspan="8" class="empty-state">
-                데이터베이스에 등록된 메뉴가 없습니다.
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>
@@ -265,454 +272,213 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted } from "vue";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
 const editTargetId = ref(null);
-
-const menus = ref([]);
-const availableLanguages = ref([]);
+const menuTree = ref([]);
 const expandedMenus = ref([]);
+// 빈 배열로 초기화
+const availableLanguages = ref([]);
 
-// 폼 초기 상태
 const menuForm = ref({
-  langu: "ko",
+  langu: "KO",
   menuId: "",
   menuNm: "",
   parentMenuId: "",
   path: "",
+  menuLevel: 1,
+  ordNum: 1,
+  useYn: 1,
 });
 
-const isValid = computed(() => {
-  return menuForm.value.langu && menuForm.value.menuId && menuForm.value.menuNm;
-});
-
-// 상위 메뉴 리스트
-const topLevelMenus = computed(() => {
-  return menus.value.filter((m) => !m.parentMenuId || m.parentMenuId === "");
-});
-
-// 트리 구조 생성 로직 (백엔드에서 트리로 주더라도 화면 구성을 위해 재가공)
-const treeMenus = computed(() => {
-  const tree = [];
-  const menuMap = {};
-
-  // 1. Map 생성
-  menus.value.forEach((menu) => {
-    menuMap[menu.menuId] = { ...menu, children: [] };
-  });
-
-  // 2. 계층 연결
-  menus.value.forEach((menu) => {
-    if (menu.parentMenuId && menuMap[menu.parentMenuId]) {
-      menuMap[menu.parentMenuId].children.push(menuMap[menu.menuId]);
-    } else if (!menu.parentMenuId || menu.parentMenuId === "") {
-      tree.push(menuMap[menu.menuId]);
+const flatMenus = computed(() => {
+  const result = [];
+  const traverse = (nodes) => {
+    if (!nodes || !nodes.length) return;
+    for (const node of nodes) {
+      const { children, ...rest } = node;
+      result.push(rest);
+      traverse(children);
     }
-  });
-
-  return tree;
+  };
+  traverse(menuTree.value);
+  return result;
 });
 
-const toggleMenu = (menuId) => {
-  const index = expandedMenus.value.indexOf(menuId);
-  if (index === -1) {
-    expandedMenus.value.push(menuId);
-  } else {
-    expandedMenus.value.splice(index, 1);
-  }
+const filteredParentOptions = computed(() => {
+  return flatMenus.value.filter(
+    (m) =>
+      m.menuLevel === menuForm.value.menuLevel - 1 &&
+      m.langu === menuForm.value.langu,
+  );
+});
+
+const toggleMenu = (id) => {
+  const idx = expandedMenus.value.indexOf(id);
+  if (idx > -1) expandedMenus.value.splice(idx, 1);
+  else expandedMenus.value.push(id);
 };
 
-onMounted(() => {
-  fetchLanguages();
-  fetchMenus();
-});
-
-// 메뉴 로드 시 상위 메뉴 자동 펼치기
-watch(
-  topLevelMenus,
-  (newVal) => {
-    if (newVal.length > 0) {
-      newVal.forEach((m) => {
-        if (!expandedMenus.value.includes(m.menuId)) {
-          expandedMenus.value.push(m.menuId);
-        }
-      });
-    }
-  },
-  { immediate: true },
-);
-
+// --- Languages 데이터 호출 함수 추가 ---
 const fetchLanguages = async () => {
   try {
-    const response = await fetch("http://localhost:3000/api/languages");
-    if (response.ok) {
-      availableLanguages.value = await response.json();
+    const res = await fetch("http://localhost:3000/api/languages");
+    if (res.ok) {
+      availableLanguages.value = await res.json();
+
+      // 언어 목록이 비어있지 않고, 현재 폼의 언어가 비어있다면 첫 번째 언어로 기본 설정
+      if (availableLanguages.value.length > 0 && !menuForm.value.langu) {
+        menuForm.value.langu = availableLanguages.value[0].langu;
+      }
     } else {
-      // Mock 데이터
-      availableLanguages.value = [
-        { langu: "ko", langNm: "한국어" },
-        { langu: "en", langNm: "English" },
-      ];
+      console.error("Failed to fetch languages:", res.status);
     }
   } catch (error) {
-    console.error("언어 로드 오류:", error);
+    console.error("Error fetching languages:", error);
   }
 };
 
 const fetchMenus = async () => {
   try {
-    const response = await fetch("http://localhost:3000/api/menus");
-    if (response.ok) {
-      const data = await response.json();
-      // 백엔드가 트리로 줄 경우 평탄화(Flatten) 처리
-      if (data.length > 0 && data[0].children) {
-        const flat = [];
-        const flatten = (items) => {
-          items.forEach((i) => {
-            const { children, ...rest } = i;
-            flat.push(rest);
-            if (children && children.length > 0) flatten(children);
-          });
-        };
-        flatten(data);
-        menus.value = flat;
-      } else {
-        menus.value = data;
-      }
+    const res = await fetch("http://localhost:3000/api/menus");
+    if (res.ok) {
+      menuTree.value = await res.json();
+    } else {
+      console.error("Failed to fetch menus:", res.status);
+      menuTree.value = [];
     }
   } catch (error) {
-    console.error("메뉴 로드 오류:", error);
+    console.error("Error fetching menus:", error);
+    menuTree.value = [];
   }
 };
 
 const handleRegisterOrUpdate = async () => {
-  if (!isValid.value) return;
   isSubmitting.value = true;
-
   try {
-    const payload = {
-      langu: menuForm.value.langu,
-      menuId: menuForm.value.menuId,
-      menuNm: menuForm.value.menuNm,
-      parentMenuId: menuForm.value.parentMenuId || null,
-      path: menuForm.value.path,
-    };
-
     const url = isEditMode.value
       ? `http://localhost:3000/api/menus/${editTargetId.value}`
       : "http://localhost:3000/api/menus";
-
-    const method = isEditMode.value ? "PUT" : "POST";
-
-    const response = await fetch(url, {
-      method: method,
+    const res = await fetch(url, {
+      method: isEditMode.value ? "PUT" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...menuForm.value,
+        parentMenuId: menuForm.value.parentMenuId || null,
+      }),
     });
-
-    if (response.ok) {
-      alert(isEditMode.value ? "수정되었습니다." : "등록되었습니다.");
+    if (res.ok) {
+      alert("완료되었습니다.");
       resetForm();
-      await fetchMenus();
+      await fetchMenus(); // 데이터 다시 로드
     } else {
-      const err = await response.json();
-      alert(`실패: ${err.message || "서버 오류"}`);
+      const errorData = await res.json();
+      alert(`오류: ${errorData.message || "작업에 실패했습니다."}`);
     }
   } catch (error) {
-    alert("네트워크 오류가 발생했습니다.");
+    alert(`네트워크 오류: ${error.message}`);
   } finally {
     isSubmitting.value = false;
   }
 };
 
-const editMenu = (menu) => {
+const editMenu = (m) => {
   isEditMode.value = true;
-  editTargetId.value = menu.id;
-  menuForm.value = {
-    langu: menu.langu,
-    menuId: menu.menuId,
-    menuNm: menu.menuNm,
-    parentMenuId: menu.parentMenuId || "",
-    path: menu.path || "",
-  };
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-const cancelEdit = () => {
-  resetForm();
+  editTargetId.value = m.id;
+  menuForm.value = { ...m, parentMenuId: m.parentMenuId || "" };
+  window.scrollTo(0, 0);
 };
 
 const resetForm = () => {
   isEditMode.value = false;
   editTargetId.value = null;
   menuForm.value = {
-    langu: "ko",
+    // 폼 초기화 시 불러온 언어 목록 중 첫 번째를 기본으로 지정합니다
+    langu:
+      availableLanguages.value.length > 0
+        ? availableLanguages.value[0].langu
+        : "KO",
     menuId: "",
     menuNm: "",
     parentMenuId: "",
     path: "",
+    menuLevel: 1,
+    ordNum: 1,
+    useYn: 1,
   };
 };
 
 const deleteMenu = async (id) => {
-  if (
-    !confirm(
-      "메뉴를 삭제하시겠습니까? 하위 메뉴가 있는 경우 주의가 필요합니다.",
-    )
-  )
+  if (!confirm("하위 메뉴까지 모두 삭제될 수 있습니다. 정말 삭제하시겠습니까?"))
     return;
-
   try {
-    const response = await fetch(`http://localhost:3000/api/menus/${id}`, {
+    const res = await fetch(`http://localhost:3000/api/menus/${id}`, {
       method: "DELETE",
     });
-
-    if (response.ok) {
+    if (res.ok) {
       alert("삭제되었습니다.");
-      if (editTargetId.value === id) resetForm();
-      await fetchMenus();
+      await fetchMenus(); // 데이터 다시 로드
+    } else {
+      const errorData = await res.json();
+      alert(`오류: ${errorData.message || "삭제에 실패했습니다."}`);
     }
   } catch (error) {
-    console.error("삭제 오류:", error);
+    alert(`네트워크 오류: ${error.message}`);
   }
 };
 
-const formatDate = (date) => {
-  if (!date) return "-";
-  return date.split("T")[0];
-};
+onMounted(() => {
+  fetchLanguages(); // 컴포넌트 로드 시 언어 데이터 호출
+  fetchMenus();
+});
 </script>
 
 <style scoped>
-.admin-container {
-  max-width: 1000px;
-  margin: 2rem auto;
-  padding: 0 1.5rem;
-  text-align: left;
-}
-
-.page-header {
-  margin-bottom: 2rem;
-}
-
-.page-title {
-  font-size: 1.75rem;
-  font-weight: 800;
-  color: #0f172a;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.icon-wrapper {
-  padding: 0.5rem;
-  background-color: #f1f5f9;
-  border-radius: 0.75rem;
-}
-
-.icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: #475569;
-}
-
-.page-subtitle {
-  color: #64748b;
-  margin-top: 0.5rem;
-  margin-left: 3.25rem;
-}
-
-.card-section {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 1rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  background-color: #f8fafc;
-}
-
-.section-title {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #1e293b;
-}
-
-.registration-form {
-  padding: 1.5rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-}
-
-.full-width {
-  grid-column: span 2;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 0.5rem;
-}
-
-.input-wrapper input,
-.input-wrapper select {
-  width: 100%;
-  padding: 0.65rem 0.85rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-}
-
-.input-wrapper input:focus,
-.input-wrapper select:focus {
-  outline: none;
-  border-color: #2563eb;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.input-wrapper input:disabled {
-  background-color: #f8fafc;
+/* 트리 테이블에 특화된 스타일 */
+.mid {
+  font-size: 0.7rem;
   color: #94a3b8;
+  margin-left: 0.5rem;
+  font-family: monospace;
+}
+.tree-line {
+  color: #cbd5e1;
+  margin-right: 0.5rem;
+  font-weight: bold;
+}
+.pl-indent-1 {
+  padding-left: 2.5rem !important;
+}
+.pl-indent-2 {
+  padding-left: 4.5rem !important;
 }
 
-.form-actions {
-  margin-top: 1.5rem;
-}
-
-.btn-primary {
-  width: 100%;
-  background-color: #2563eb;
+/* 레벨 배지 */
+.badge {
+  font-size: 0.6rem;
+  padding: 2px 5px;
+  border-radius: 4px;
   color: white;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  margin-right: 4px;
 }
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #1d4ed8;
+.badge.l1 {
+  background: #2563eb;
 }
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+.badge.l2 {
+  background: #10b981;
 }
-
-.table-container {
-  overflow-x: auto;
-}
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.user-table th {
-  background-color: #f8fafc;
-  padding: 1rem;
-  text-align: left;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.user-table td {
-  padding: 0.85rem 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  font-size: 0.9rem;
-  color: #334155;
+.badge.l3 {
+  background: #8b5cf6;
 }
 
 .toggle-btn {
   background: none;
-  border: none;
-  color: #94a3b8;
+  border: 1px solid #e2e8f0;
+  padding: 2px 5px;
   cursor: pointer;
-  font-size: 0.75rem;
-}
-
-.toggle-btn:hover {
-  color: #2563eb;
-}
-
-.lang-tag {
-  background-color: #f1f5f9;
-  color: #475569;
-  padding: 0.2rem 0.5rem;
-  border-radius: 0.25rem;
-  font-weight: 700;
-  font-size: 0.7rem;
-}
-
-.sub-lang {
-  background-color: #fff1f2;
-  color: #e11d48;
-}
-
-.font-mono {
-  font-family: ui-monospace, monospace;
-  color: #64748b;
-}
-
-.badge-sm {
-  background-color: #f1f5f9;
-  color: #64748b;
-  padding: 0.15rem 0.4rem;
-  border-radius: 9999px;
-  font-size: 0.7rem;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-}
-
-.btn-edit,
-.btn-delete {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: transform 0.1s;
-}
-
-.btn-edit:hover {
-  transform: scale(1.2);
-}
-.btn-delete:hover {
-  transform: scale(1.2);
-}
-
-.empty-state {
-  padding: 4rem !important;
-  text-align: center;
-  color: #94a3b8;
-  font-style: italic;
-}
-
-.top-level-row:hover {
-  background-color: #f8fafc;
-}
-
-.child-level-row {
-  background-color: #fafafa;
+  font-size: 0.6rem;
+  border-radius: 4px;
 }
 </style>

@@ -7,7 +7,7 @@
         <span class="dot green"></span> 로그인됨
       </span>
       <!-- router-link 대신 button으로 변경하여 직접 로그인 함수 호출 -->
-      <button v-else @click="handleLogin" class="login-btn">로그인</button>
+      <button v-else @click="handleLogin" class="btn">로그인</button>
     </div>
   </header>
 </template>
@@ -99,24 +99,5 @@ const handleLogin = () => {
 }
 .dot.green {
   background-color: #10b981;
-}
-
-/* button 태그에 맞게 테두리 제거 및 포인터 추가 */
-.login-btn {
-  padding: 0.5rem 1.25rem;
-  background-color: #2563eb;
-  color: white;
-  text-decoration: none;
-  border: none;
-  cursor: pointer;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  transition: background-color 0.2s;
-  font-family: inherit;
-  font-size: 0.875rem;
-}
-
-.login-btn:hover {
-  background-color: #1d4ed8;
 }
 </style>

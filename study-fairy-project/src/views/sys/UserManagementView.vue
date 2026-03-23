@@ -28,10 +28,10 @@
       <div class="card-header">
         <h2 class="section-title">새 사용자 등록</h2>
       </div>
-      <form @submit.prevent="handleRegister" class="registration-form">
-        <div class="form-group">
-          <label for="userId">사용자 ID (Unique)</label>
-          <div class="input-wrapper">
+      <form @submit.prevent="handleRegister">
+        <div class="form-grid">
+          <div class="form-group full-width">
+            <label for="userId">사용자 ID *</label>
             <input
               type="text"
               id="userId"
@@ -40,19 +40,16 @@
               required
               :disabled="isSubmitting"
             />
+            <p class="input-hint">ID는 중복될 수 없으며 필수 입력 사항입니다.</p>
           </div>
-          <p class="input-hint">ID는 중복될 수 없으며 필수 입력 사항입니다.</p>
         </div>
-
-        <div class="form-actions">
-          <button
-            type="submit"
-            class="btn-primary"
-            :disabled="isSubmitting || !newUser.userId"
-          >
-            {{ isSubmitting ? "등록 중..." : "사용자 추가" }}
-          </button>
-        </div>
+        <button
+          type="submit"
+          class="btn-primary"
+          :disabled="isSubmitting || !newUser.userId"
+        >
+          {{ isSubmitting ? "등록 중..." : "사용자 추가" }}
+        </button>
       </form>
     </section>
 
@@ -64,7 +61,7 @@
       </div>
 
       <div class="table-container">
-        <table class="user-table">
+        <table class="data-table">
           <thead>
             <tr>
               <th>ID (PK)</th>
@@ -170,135 +167,27 @@ const formatDate = (date) => {
 </script>
 
 <style scoped>
-.admin-container {
-  max-width: 1000px;
-  margin: 2rem auto;
-  padding: 0 1.5rem;
-  text-align: left;
-}
-
-/* 헤더 스타일 */
-.page-header {
-  margin-bottom: 2.5rem;
-}
-
-.page-title {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: #0f172a;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0;
-}
-
+/* UserManagementView에만 적용되는 고유 스타일 */
 .icon-wrapper {
   padding: 0.5rem;
   background-color: #f1f5f9;
   border-radius: 0.75rem;
 }
-
-.icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: #475569;
-}
-
 .page-subtitle {
   color: #64748b;
   margin-top: 0.5rem;
-  margin-left: 3.25rem;
+  margin-left: 3.25rem; /* 아이콘 너비 + gap */
 }
-
-/* 카드 공통 스타일 */
-.card-section {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  background-color: #f8fafc;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
-}
-
-/* 폼 스타일 */
-.registration-form {
-  padding: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 0.5rem;
-}
-
-.input-wrapper input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.input-wrapper input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
 .input-hint {
   font-size: 0.75rem;
   color: #94a3b8;
   margin-top: 0.4rem;
 }
-
-.btn-primary {
-  width: 100%;
-  background-color: #2563eb;
-  color: white;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #1d4ed8;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-/* 테이블 스타일 */
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .badge {
   background-color: #dbeafe;
   color: #1e40af;
@@ -307,44 +196,15 @@ const formatDate = (date) => {
   font-size: 0.75rem;
   font-weight: 700;
 }
-
 .table-container {
   overflow-x: auto;
 }
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.user-table th {
-  background-color: #f8fafc;
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #64748b;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.user-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  color: #334155;
-}
-
-.font-bold {
-  font-weight: 600;
-  color: #0f172a;
-}
-
 .empty-state {
   text-align: center;
   padding: 3rem !important;
   color: #94a3b8;
 }
-
-.user-table tr:hover td {
+.data-table tr:hover td {
   background-color: #f8fafc;
 }
 </style>

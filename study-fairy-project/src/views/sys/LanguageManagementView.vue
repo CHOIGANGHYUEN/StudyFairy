@@ -30,49 +30,42 @@
       <div class="card-header">
         <h2 class="section-title">새 언어 추가</h2>
       </div>
-      <form @submit.prevent="handleRegister" class="registration-form">
+      <form @submit.prevent="handleRegister">
         <div class="form-grid">
           <!-- 언어 코드 -->
           <div class="form-group">
-            <label for="langu">언어 코드 (Code)</label>
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="langu"
-                v-model="newLang.langu"
-                placeholder="예: ko, en, ja"
-                required
-                :disabled="isSubmitting"
-              />
-            </div>
+            <label for="langu">언어 코드 (Code) *</label>
+            <input
+              type="text"
+              id="langu"
+              v-model="newLang.langu"
+              placeholder="예: ko, en"
+              required
+              :disabled="isSubmitting"
+            />
             <p class="input-hint">ISO 639-1 형식 권장 (예: ko, en)</p>
           </div>
 
           <!-- 언어 이름 -->
           <div class="form-group">
-            <label for="languNm">언어 이름 (Name)</label>
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="languNm"
-                v-model="newLang.languNm"
-                placeholder="예: 한국어, English"
-                required
-                :disabled="isSubmitting"
-              />
-            </div>
+            <label for="languNm">언어 이름 (Name) *</label>
+            <input
+              type="text"
+              id="languNm"
+              v-model="newLang.languNm"
+              placeholder="예: 한국어, English"
+              required
+              :disabled="isSubmitting"
+            />
           </div>
         </div>
-
-        <div class="form-actions">
-          <button
-            type="submit"
-            class="btn-primary"
-            :disabled="isSubmitting || !isValid"
-          >
-            {{ isSubmitting ? "처리 중..." : "언어 등록" }}
-          </button>
-        </div>
+        <button
+          type="submit"
+          class="btn-primary"
+          :disabled="isSubmitting || !isValid"
+        >
+          {{ isSubmitting ? "처리 중..." : "언어 등록" }}
+        </button>
       </form>
     </section>
 
@@ -84,7 +77,7 @@
       </div>
 
       <div class="table-container">
-        <table class="user-table">
+        <table class="data-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -92,7 +85,6 @@
               <th>언어 이름</th>
               <th>생성자</th>
               <th>생성일시</th>
-              <th>수정자</th>
               <th>관리</th>
             </tr>
           </thead>
@@ -105,19 +97,20 @@
               <td class="font-bold">{{ lang.languNm }}</td>
               <td>{{ lang.createdBy || "SYSTEM" }}</td>
               <td>{{ formatDate(lang.createdAt) }}</td>
-              <td>{{ lang.changedBy || "-" }}</td>
-              <td>
-                <button
-                  @click="handleDelete(lang.id)"
-                  class="btn-delete"
-                  :disabled="isSubmitting"
-                >
-                  삭제
-                </button>
+              <td class="text-center">
+                <div class="action-buttons">
+                  <button
+                    @click="handleDelete(lang.id)"
+                    class="btn-icon"
+                    :disabled="isSubmitting"
+                  >
+                    🗑️
+                  </button>
+                </div>
               </td>
             </tr>
             <tr v-if="languages.length === 0">
-              <td colspan="7" class="empty-state">
+              <td colspan="6" class="empty-state">
                 등록된 언어 정보가 없습니다.
               </td>
             </tr>
@@ -236,137 +229,25 @@ const formatDate = (date) => {
 </script>
 
 <style scoped>
-.admin-container {
-  max-width: 1000px;
-  margin: 2rem auto;
-  padding: 0 1.5rem;
-  text-align: left;
-}
-
-.page-header {
-  margin-bottom: 2.5rem;
-}
-
-.page-title {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: #0f172a;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin: 0;
-}
-
-.icon-wrapper {
-  padding: 0.5rem;
-  background-color: #f1f5f9;
-  border-radius: 0.75rem;
-}
-
+/* LanguageManagementView에만 적용되는 고유 스타일 */
 .icon {
-  width: 1.5rem;
-  height: 1.5rem;
-  color: #0891b2;
+  color: #0891b2; /* Cyan color for this page's icon */
 }
-
 .page-subtitle {
   color: #64748b;
   margin-top: 0.5rem;
   margin-left: 3.25rem;
 }
-
-.card-section {
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 1.25rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
-  background-color: #f8fafc;
-}
-
-.section-title {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
-}
-
-.registration-form {
-  padding: 1.5rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #475569;
-  margin-bottom: 0.5rem;
-}
-
-.input-wrapper input {
-  width: 100%;
-  padding: 0.75rem 1rem;
-  border: 1px solid #cbd5e1;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.input-wrapper input:focus {
-  outline: none;
-  border-color: #0891b2;
-  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
-}
-
 .input-hint {
   font-size: 0.75rem;
   color: #94a3b8;
   margin-top: 0.4rem;
 }
-
-.form-actions {
-  margin-top: 1.5rem;
-}
-
-.btn-primary {
-  width: 100%;
-  background-color: #0891b2;
-  color: white;
-  padding: 0.75rem;
-  border: none;
-  border-radius: 0.5rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background-color: #0e7490;
-}
-
-.btn-primary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .list-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
-
 .badge {
   background-color: #ecfeff;
   color: #0891b2;
@@ -375,33 +256,12 @@ const formatDate = (date) => {
   font-size: 0.75rem;
   font-weight: 700;
 }
-
 .table-container {
   overflow-x: auto;
 }
-
-.user-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.875rem;
-}
-
-.user-table th {
+.data-table tr:hover td {
   background-color: #f8fafc;
-  padding: 1rem;
-  text-align: left;
-  font-weight: 600;
-  color: #64748b;
-  border-bottom: 1px solid #f1f5f9;
 }
-
-.user-table td {
-  padding: 1rem;
-  border-bottom: 1px solid #f1f5f9;
-  color: #334155;
-  vertical-align: middle;
-}
-
 .lang-code-badge {
   background-color: #f1f5f9;
   color: #475569;
@@ -411,42 +271,10 @@ const formatDate = (date) => {
   font-family: monospace;
   border: 1px solid #e2e8f0;
 }
-
-.font-bold {
-  font-weight: 600;
-  color: #0f172a;
-}
-
 .empty-state {
   text-align: center;
   padding: 3rem !important;
   color: #94a3b8;
-}
-
-.user-table tr:hover td {
-  background-color: #f8fafc;
-}
-
-/* 추가된 삭제 버튼 스타일 */
-.btn-delete {
-  background: none;
-  border: none;
-  color: #ef4444; /* Tailwind red-500 */
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  transition: all 0.2s;
-}
-
-.btn-delete:hover:not(:disabled) {
-  background-color: #fef2f2; /* Tailwind red-50 */
-  color: #b91c1c; /* Tailwind red-700 */
-}
-
-.btn-delete:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {

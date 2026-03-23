@@ -1,38 +1,42 @@
 const menuMapper = require("../mapper/menuMapper");
 
 exports.getMenus = async () => {
-  const rows = await menuMapper.findAll();
-  const menuMap = {};
-  const tree = [];
+  const menus = await menuMapper.findAll();
 
-  rows.forEach((row) => {
-    const id = row.menuId || row.id;
-    menuMap[id] = { ...row, children: [] };
+  const menuMap = {};
+  const menuTree = [];
+
+  // 1. 각 메뉴를 초기화하고 맵에 추가합니다.
+  menus.forEach((menu) => {
+    menu.children = [];
+    menuMap[menu.menuId] = menu;
   });
 
-  rows.forEach((row) => {
-    const id = row.menuId || row.id;
-    const currentMenu = menuMap[id];
-    const parentId = row.parentMenuId;
-
-    if (
-      parentId !== null &&
-      parentId !== undefined &&
-      parentId !== 0 &&
-      menuMap[parentId]
-    ) {
-      menuMap[parentId].children.push(currentMenu);
+  // 2. 트리 구조를 구축합니다.
+  menus.forEach((menu) => {
+    if (menu.parentMenuId && menuMap[menu.parentMenuId]) {
+      // 부모 메뉴가 있으면 children 배열에 추가합니다.
+      menuMap[menu.parentMenuId].children.push(menu);
     } else {
-      tree.push(currentMenu);
+      // 부모 메뉴가 없으면 최상위 메뉴(루트 노드)입니다.
+      menuTree.push(menu);
     }
   });
 
-  return tree;
+  return menuTree;
 };
 
 exports.createMenu = async (menuData) => {
-  if (!menuData.langu || !menuData.menuId || !menuData.menuNm) {
-    const error = new Error("필수 입력 정보가 누락되었습니다.");
+  // menuLevel 필수 체크
+  if (
+    !menuData.langu ||
+    !menuData.menuId ||
+    !menuData.menuNm ||
+    !menuData.menuLevel
+  ) {
+    const error = new Error(
+      "필수 입력 정보(언어, ID, 이름, 레벨)가 누락되었습니다.",
+    );
     error.statusCode = 400;
     throw error;
   }
@@ -49,7 +53,6 @@ exports.createMenu = async (menuData) => {
     throw err;
   }
 };
-
 exports.updateMenu = async (id, menuData) => {
   const result = await menuMapper.update(id, menuData);
   if (result.affectedRows === 0) {

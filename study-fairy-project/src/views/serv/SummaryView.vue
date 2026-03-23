@@ -1,5 +1,5 @@
 <template>
-  <div class="summary-container">
+  <div class="admin-container">
     <h1>문서 요약 서비스</h1>
     <p v-if="error" style="color: red">오류: {{ error }}</p>
 
@@ -24,7 +24,7 @@
 
     <!-- 4, 5. 실행 및 결과 영역 -->
     <ResultSection
-      :summaryResult="summaryResult"
+      :results="summaryResult"
       :isLoading="isLoading"
       :summaryLoading="summaryLoading"
       :disabled="selectedTocItems.length === 0"
@@ -41,13 +41,13 @@ import { useRouter } from "vue-router";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
+import ModelSection from "@/components/serv/ModelSection.vue";
+import PromptSection from "@/components/serv/PromptSection.vue";
+import ResultSection from "@/components/serv/ResultSection.vue";
+import TocSection from "@/components/serv/TocSection.vue";
+import FileSection from "@/components/serv/FileSection.vue";
 
 // 분리한 하위 컴포넌트 임포트
-import ModelSection from "@/components/ModelSection.vue";
-import FileSection from "@/components/FileSection.vue";
-import TocSection from "@/components/TocSection.vue";
-import PromptSection from "@/components/PromptSection.vue";
-import ResultSection from "@/components/ResultSection.vue";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -57,7 +57,7 @@ const selectedFiles = ref([]);
 const toc = ref([]);
 const selectedTocItems = ref([]);
 const summaryPrompt = ref("다음 내용을 요약해줘:");
-const summaryResult = ref("");
+const summaryResult = ref([]);
 const allContent = ref("");
 
 // 로딩 및 에러 상태
@@ -174,7 +174,7 @@ const runSummary = async () => {
   isLoading.value = true;
   summaryLoading.value = true;
   error.value = null;
-  summaryResult.value = "";
+  summaryResult.value = [];
 
   try {
     // 사용자가 선택한 모델 기반으로 AI 객체 생성
@@ -191,11 +191,11 @@ const runSummary = async () => {
     }
 
     for (const item of selectedTocItems.value) {
-      const prompt = `${summaryPrompt.value}\n---\n[전체 내용]:\n${allContent.value}\n---\n[요약할 주요 항목]:\n${item.title}\n---\n위 내용을 바탕으로 선택된 주요 항목에 초점을 맞춰서 상세하고 구조화된 요약을 생성해줘. 결과는 HTML 형식으로 제공해줘.`;
+      const prompt = `${summaryPrompt.value}\n---\n[전체 내용]:\n${allContent.value}\n---\n[요약할 주요 항목]:\n${item.title}\n---\n위 내용을 바탕으로 선택된 주요 항목에 초점을 맞춰서 상세하고 구조화된 요약을 생성해줘. 결과는 마크다운(Markdown) 형식으로 제공해줘.`;
 
       const result = await model.generateContent(prompt);
       const text = await result.response.text();
-      summaryResult.value += `<h2>${item.title}</h2>\n${text}`;
+      summaryResult.value.push({ title: item.title, content: text });
     }
   } catch (err) {
     error.value = "요약 실행 중 오류가 발생했습니다: " + err.message;
@@ -207,8 +207,8 @@ const runSummary = async () => {
 };
 
 // --- 구글 독스 내보내기 로직 ---
-const exportToGoogleDocs = async () => {
-  if (!summaryResult.value) {
+const exportToGoogleDocs = async (item) => {
+  if (!item || !item.content) {
     alert("내보낼 요약 결과가 없습니다.");
     return;
   }
@@ -224,20 +224,20 @@ const exportToGoogleDocs = async () => {
 
   try {
     const createResponse = await gapi.client.docs.documents.create({
-      title: "요약된 문서",
+      title: item.title || "요약된 문서",
     });
 
     const documentId = createResponse.result.documentId;
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = summaryResult.value;
-    const textContent = tempDiv.textContent || tempDiv.innerText || "";
+    
+    // Markdown 콘텐츠를 준비합니다.
+    const markdownContent = `# ${item.title}\n\n${item.content}`;
 
     await gapi.client.docs.documents.batchUpdate({
       documentId,
       requests: [
         {
           insertText: {
-            text: textContent,
+            text: markdownContent,
             location: { index: 1 },
           },
         },
@@ -256,9 +256,5 @@ const exportToGoogleDocs = async () => {
 </script>
 
 <style scoped>
-.summary-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-}
+/* Container style is now handled by the global .admin-container class */
 </style>

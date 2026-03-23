@@ -36,7 +36,7 @@
               </button>
               <!-- 다운로드 버튼 -->
               <button @click="downloadResult(item)" class="btn btn-download">
-                HTML 다운로드
+                Markdown 다운로드
               </button>
               <!-- 구글 독스 변환 버튼 -->
               <button @click="$emit('export', item)" class="btn btn-export">
@@ -133,20 +133,18 @@ const togglePreview = (index) => {
 
 // --- 다운로드 로직 ---
 const downloadResult = (item) => {
-  // HTML 형식으로 다운로드되도록 Blob 객체 생성
-  const blob = new Blob(
-    [
-      `<html><head><meta charset="utf-8"><title>${item.title}</title></head><body><h1>${item.title}</h1>${item.content}</body></html>`,
-    ],
-    { type: "text/html;charset=utf-8;" },
-  );
+  // Markdown 형식으로 다운로드되도록 Blob 객체 생성
+  const markdownContent = `# ${item.title}\n\n${item.content}`;
+  const blob = new Blob([markdownContent], {
+    type: "text/markdown;charset=utf-8;",
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
 
   // 파일 이름에서 특수문자를 제거하여 안전하게 다운로드
   const safeTitle = item.title.replace(/[^a-zA-Z0-9가-힣\s]/g, "").trim();
-  link.setAttribute("download", `${safeTitle || "요약"}.html`);
+  link.setAttribute("download", `${safeTitle || "요약"}.md`);
 
   document.body.appendChild(link);
   link.click();
