@@ -1,25 +1,32 @@
-const menuMapper = require("../mapper/menuMapper");
+const { Menu } = require("../models");
 
 exports.getMenus = async () => {
-  const menus = await menuMapper.findAll();
+  const menus = await Menu.findAll({
+    order: [
+      ["menuLevel", "ASC"],
+      ["ordNum", "ASC"],
+    ],
+  });
 
   const menuMap = {};
   const menuTree = [];
 
   // 1. 각 메뉴를 초기화하고 맵에 추가합니다.
   menus.forEach((menu) => {
-    menu.children = [];
-    menuMap[menu.menuId] = menu;
+    const plainMenu = menu.get({ plain: true });
+    plainMenu.children = [];
+    menuMap[plainMenu.menuId] = plainMenu;
   });
 
   // 2. 트리 구조를 구축합니다.
   menus.forEach((menu) => {
-    if (menu.parentMenuId && menuMap[menu.parentMenuId]) {
+    const plainMenu = menu.get({ plain: true });
+    if (plainMenu.parentMenuId && menuMap[plainMenu.parentMenuId]) {
       // 부모 메뉴가 있으면 children 배열에 추가합니다.
-      menuMap[menu.parentMenuId].children.push(menu);
+      menuMap[plainMenu.parentMenuId].children.push(plainMenu);
     } else {
       // 부모 메뉴가 없으면 최상위 메뉴(루트 노드)입니다.
-      menuTree.push(menu);
+      menuTree.push(menuMap[plainMenu.menuId]);
     }
   });
 
@@ -42,10 +49,10 @@ exports.createMenu = async (menuData) => {
   }
 
   try {
-    const result = await menuMapper.create(menuData);
-    return { message: "등록되었습니다.", insertId: result.insertId };
+    const newMenu = await Menu.create(menuData);
+    return { message: "등록되었습니다.", insertId: newMenu.id };
   } catch (err) {
-    if (err.code === "ER_DUP_ENTRY") {
+    if (err instanceof require('sequelize').UniqueConstraintError) {
       const error = new Error("중복된 메뉴 ID입니다.");
       error.statusCode = 409;
       throw error;
@@ -54,8 +61,8 @@ exports.createMenu = async (menuData) => {
   }
 };
 exports.updateMenu = async (id, menuData) => {
-  const result = await menuMapper.update(id, menuData);
-  if (result.affectedRows === 0) {
+  const [affectedRows] = await Menu.update(menuData, { where: { id } });
+  if (affectedRows === 0) {
     const error = new Error("수정 대상을 찾을 수 없습니다.");
     error.statusCode = 404;
     throw error;
@@ -64,20 +71,20 @@ exports.updateMenu = async (id, menuData) => {
 };
 
 exports.deleteMenu = async (id) => {
-  const target = await menuMapper.findById(id);
+  const target = await Menu.findByPk(id);
   if (!target) {
     const error = new Error("대상을 찾을 수 없습니다.");
     error.statusCode = 404;
     throw error;
   }
 
-  const childCount = await menuMapper.countByParentId(target.menuId);
+  const childCount = await Menu.count({ where: { parentMenuId: target.menuId } });
   if (childCount > 0) {
     const error = new Error("하위 메뉴가 있어 삭제할 수 없습니다.");
     error.statusCode = 400;
     throw error;
   }
 
-  await menuMapper.delete(id);
+  await target.destroy();
   return { message: "삭제되었습니다." };
 };

@@ -1,27 +1,23 @@
 <template>
   <div class="admin-container">
-    <header class="page-header">
-      <h1 class="page-title">
-        <div class="icon-wrapper">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-            />
-          </svg>
-        </div>
-        사용자 관리
-      </h1>
-      <p class="page-subtitle">시스템 이용자를 등록하고 관리합니다.</p>
-    </header>
+    <PageTitle>
+      <template #icon>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+          />
+        </svg>
+      </template>
+    </PageTitle>
 
     <!-- 사용자 등록 폼 섹션 -->
     <section class="card-section">
@@ -40,7 +36,9 @@
               required
               :disabled="isSubmitting"
             />
-            <p class="input-hint">ID는 중복될 수 없으며 필수 입력 사항입니다.</p>
+            <p class="input-hint">
+              ID는 중복될 수 없으며 필수 입력 사항입니다.
+            </p>
           </div>
         </div>
         <button
@@ -92,10 +90,12 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
+import api from "@/service/api";
+import PageTitle from "@/components/PageTitle.vue";
 
 const authStore = useAuthStore();
 const isSubmitting = ref(false);
-const users = ref([]); // 실제로는 API에서 불러올 데이터
+const users = ref([]);
 
 const newUser = ref({
   userId: "",
@@ -107,53 +107,29 @@ onMounted(() => {
 });
 
 const fetchUsers = async () => {
-  // TODO: 실제 API 연동 시 아래 로직 교체
-  // const response = await axios.get('/api/users');
-  // users.value = response.data;
-
-  // 임시 데이터
-  users.value = [
-    {
-      id: 1,
-      userId: "admin",
-      createdBy: "SYSTEM",
-      createdAt: new Date(),
-      changedAt: new Date(),
-    },
-  ];
+  try {
+    const response = await api.get("/users");
+    users.value = response.data;
+  } catch (error) {
+    console.error("사용자 목록 로드 오류:", error);
+  }
 };
 
 const handleRegister = async () => {
   if (!newUser.value.userId) return;
-
   isSubmitting.value = true;
-
   try {
-    // DB 명세에 따른 데이터 객체 구성
-    const registrationData = {
+    await api.post("/users", {
       userId: newUser.value.userId,
-      createdBy: "ADMIN", // 실제로는 현재 로그인된 유저 정보 사용
-      createdAt: new Date().toISOString(),
-      changedBy: "ADMIN",
-      changedAt: new Date().toISOString(),
-    };
-
-    console.log("등록 요청 데이터:", registrationData);
-
-    // API 호출 시뮬레이션
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // 성공 시 리스트 업데이트
-    users.value.push({
-      id: users.value.length + 1,
-      ...registrationData,
+      createdBy: authStore.user?.id || "SYSTEM",
+      changedBy: authStore.user?.id || "SYSTEM",
     });
-
-    // 폼 초기화
     newUser.value.userId = "";
     alert("사용자가 성공적으로 등록되었습니다.");
+    await fetchUsers(); // 목록 새로고침
   } catch (error) {
-    alert("등록 중 오류가 발생했습니다.");
+    const message = error.response?.data?.message || "등록 실패";
+    alert(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -168,16 +144,6 @@ const formatDate = (date) => {
 
 <style scoped>
 /* UserManagementView에만 적용되는 고유 스타일 */
-.icon-wrapper {
-  padding: 0.5rem;
-  background-color: #f1f5f9;
-  border-radius: 0.75rem;
-}
-.page-subtitle {
-  color: #64748b;
-  margin-top: 0.5rem;
-  margin-left: 3.25rem; /* 아이콘 너비 + gap */
-}
 .input-hint {
   font-size: 0.75rem;
   color: #94a3b8;

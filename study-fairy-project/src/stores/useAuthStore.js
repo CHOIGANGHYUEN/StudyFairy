@@ -1,16 +1,32 @@
-import { defineStore } from 'pinia';
+import { defineStore } from "pinia";
 
-export const useAuthStore = defineStore('auth', {
+export const useAuthStore = defineStore("auth", {
   state: () => ({
-    credential: null,
-    accessToken: null,
+    // sessionStorage에서 가져오거나 null로 초기화
+    accessToken: sessionStorage.getItem("accessToken"),
+    user: JSON.parse(sessionStorage.getItem("user")),
+    returnUrl: null,
   }),
   actions: {
-    setCredential(credential) {
-      this.credential = credential;
+    setAccessToken(token) {
+      this.accessToken = token;
+      if (token) {
+        sessionStorage.setItem("accessToken", token);
+      } else {
+        sessionStorage.removeItem("accessToken");
+      }
     },
-    setAccessToken(accessToken) {
-      this.accessToken = accessToken;
-    }
+    login(user, token) {
+      this.user = user;
+      this.accessToken = token;
+      sessionStorage.setItem("user", JSON.stringify(user));
+      sessionStorage.setItem("accessToken", token);
+    },
+    logout() {
+      this.user = null;
+      this.accessToken = null;
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("accessToken");
+    },
   },
 });

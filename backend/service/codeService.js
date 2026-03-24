@@ -1,5 +1,5 @@
-const db = require("../config/db");
-const codeMapper = require("../mapper/codeMapper");
+const { CodeHead, CodeItem, sequelize } = require("../models");
+const { Op } = require("sequelize");
 
 // --- Code Head (Group) Service ---
 
@@ -7,7 +7,10 @@ exports.getAllHeads = async (categoryCode) => {
   if (!categoryCode) {
     throw new Error("Category Code is required.");
   }
-  return await codeMapper.findAllHeads(categoryCode);
+  return await CodeHead.findAll({
+    where: { categoryCode },
+    order: [["groupCode", "ASC"]],
+  });
 };
 
 exports.createHead = async (headData) => {
@@ -16,63 +19,52 @@ exports.createHead = async (headData) => {
     error.statusCode = 400;
     throw error;
   }
-  const existing = await codeMapper.findHead(
-    headData.categoryCode,
-    headData.groupCode,
-  );
+  const existing = await CodeHead.findOne({
+    where: {
+      categoryCode: headData.categoryCode,
+      groupCode: headData.groupCode,
+    },
+  });
   if (existing) {
     const error = new Error("Duplicate Group Code for this Category.");
     error.statusCode = 409;
     throw error;
   }
-  return await codeMapper.createHead(headData);
+  return await CodeHead.create(headData);
 };
 
 exports.updateHead = async (categoryCode, groupCode, headData) => {
-  const result = await codeMapper.updateHead(categoryCode, groupCode, headData);
-  if (result.affectedRows === 0) {
+  const [affectedRows] = await CodeHead.update(headData, {
+    where: { categoryCode, groupCode },
+  });
+  if (affectedRows === 0) {
     const error = new Error("Group Code not found.");
     error.statusCode = 404;
     throw error;
   }
-  return result;
+  return { affectedRows };
 };
 
 exports.deleteHead = async (categoryCode, groupCode) => {
-  let connection;
-  try {
-    connection = await db.getConnection();
-    await connection.beginTransaction();
-
+  return sequelize.transaction(async (t) => {
     // 1. Delete all items in the group
-    await codeMapper.deleteItemsByGroup(connection, categoryCode, groupCode);
+    await CodeItem.destroy({
+      where: { categoryCode, groupCode },
+      transaction: t,
+    });
 
     // 2. Delete the head of the group
-    const result = await codeMapper.deleteHead(
-      connection,
-      categoryCode,
-      groupCode,
-    );
+    const affectedRows = await CodeHead.destroy({
+      where: { categoryCode, groupCode },
+      transaction: t,
+    });
 
-    if (result[0].affectedRows === 0) {
+    if (affectedRows === 0) {
       throw new Error("Group Code not found."); // This will trigger rollback
     }
 
-    await connection.commit();
-    return result;
-  } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
-    // Re-throw the error to be handled by the controller
-    const serviceError = new Error(error.message || "Failed to delete code group.");
-    serviceError.statusCode = error.statusCode || 500;
-    throw serviceError;
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
+    return { affectedRows };
+  });
 };
 
 // --- Code Item (Detail) Service ---
@@ -81,7 +73,10 @@ exports.getItemsByGroupCode = async (categoryCode, groupCode) => {
   if (!categoryCode || !groupCode) {
     throw new Error("Category Code and Group Code are required.");
   }
-  return await codeMapper.findItemsByGroupCode(categoryCode, groupCode);
+  return await CodeItem.findAll({
+    where: { categoryCode, groupCode },
+    order: [["subCode", "ASC"]],
+  });
 };
 
 exports.createItem = async (itemData) => {
@@ -92,35 +87,38 @@ exports.createItem = async (itemData) => {
     error.statusCode = 400;
     throw error;
   }
-  return await codeMapper.createItem(itemData);
+  return await CodeItem.create(itemData);
 };
 
 exports.updateItem = async (categoryCode, groupCode, subCode, itemData) => {
-  const result = await codeMapper.updateItem(
-    categoryCode,
-    groupCode,
-    subCode,
-    itemData,
-  );
-  if (result.affectedRows === 0) {
+  const [affectedRows] = await CodeItem.update(itemData, {
+    where: { categoryCode, groupCode, subCode },
+  });
+  if (affectedRows === 0) {
     const error = new Error("Code Item not found.");
     error.statusCode = 404;
     throw error;
   }
-  return result;
+  return { affectedRows };
 };
 
 exports.deleteItem = async (categoryCode, groupCode, subCode) => {
-  const result = await codeMapper.deleteItem(categoryCode, groupCode, subCode);
-  if (result.affectedRows === 0) {
+  const affectedRows = await CodeItem.destroy({
+    where: { categoryCode, groupCode, subCode },
+  });
+  if (affectedRows === 0) {
     const error = new Error("Code Item not found.");
     error.statusCode = 404;
     throw error;
   }
-  return result;
+  return { affectedRows };
 };
 
 exports.initializeCategories = async () => {
-  return await codeMapper.initializeCategories();
-};
+    const categories = [
+        { categoryCode: 'SYS', groupCode: 'CAT001', subCode: 'SYS', description: 'System Codes', useYn: 1, createdBy: 'ADMIN' },
+        { categoryCode: 'SYS', groupCode: 'CAT001', subCode: 'GEN', description: 'General Codes', useYn: 1, createdBy: 'ADMIN' },
+    ];
 
+    return await CodeItem.bulkCreate(categories, { ignoreDuplicates: true });
+};

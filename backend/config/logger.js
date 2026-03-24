@@ -13,6 +13,26 @@ if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
 
+// 민감 정보 마스킹 처리를 위한 포맷터 추가
+const sensitiveDataFilter = winston.format((info) => {
+  const sensitiveKeys = [
+    "password",
+    "accessToken",
+    "refreshToken",
+    "token",
+    "authorization",
+    "apiKey",
+  ];
+  if (info.message && typeof info.message === "string") {
+    sensitiveKeys.forEach((key) => {
+      // JSON 문자열 내부의 민감한 키-값 패턴을 정규식으로 찾아 마스킹
+      const regex = new RegExp(`("${key}"\\s*:\\s*")([^"]+)(")`, "gi");
+      info.message = info.message.replace(regex, "$1********$3");
+    });
+  }
+  return info;
+});
+
 // 사용자 정의 로그 포맷
 const logFormat = printf(({ level, message, timestamp }) => {
   return `${timestamp} [${level}]: ${message}`;
@@ -24,7 +44,11 @@ const logFormat = printf(({ level, message, timestamp }) => {
 const logger = winston.createLogger({
   // 환경에 따른 로그 레벨 설정 (운영: info, 개발: debug)
   level: process.env.NODE_ENV === "production" ? "info" : "debug",
-  format: combine(timestamp({ format: "YYYY-MM-DD HH:mm:ss" }), logFormat),
+  format: combine(
+    sensitiveDataFilter(),
+    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    logFormat,
+  ),
   transports: [
     // 1. 콘솔 출력 (개발용)
     new winston.transports.Console({

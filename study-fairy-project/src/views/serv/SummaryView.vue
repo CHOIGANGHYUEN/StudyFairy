@@ -38,7 +38,6 @@
 import { ref } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useRouter } from "vue-router";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import ModelSection from "@/components/serv/ModelSection.vue";
@@ -46,10 +45,12 @@ import PromptSection from "@/components/serv/PromptSection.vue";
 import ResultSection from "@/components/serv/ResultSection.vue";
 import TocSection from "@/components/serv/TocSection.vue";
 import FileSection from "@/components/serv/FileSection.vue";
+import api from "@/service/api";
 
 // 분리한 하위 컴포넌트 임포트
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
+
 
 // 전역 상태 관리
 const selectedModel = ref("gemini-3-flash-preview"); // 선택된 모델 상태 추가
@@ -68,9 +69,6 @@ const error = ref(null);
 const authStore = useAuthStore();
 const router = useRouter();
 
-// Gemini API 초기화 (model은 실행 시점에 동적으로 할당하도록 밖에서 제외)
-const genAI = new GoogleGenerativeAI(import.meta.env.VITE_GEMINI_API_KEY);
-
 // --- 구글 드라이브 파일 픽커 로직 ---
 const openGoogleDrivePicker = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
@@ -86,15 +84,30 @@ const openGoogleDrivePicker = () => {
     return;
   }
 
-  gapi.load("picker", () => {
-    const picker = new google.picker.PickerBuilder()
-      .addView(google.picker.ViewId.DOCS)
-      .setOAuthToken(authStore.accessToken)
-      .setDeveloperKey(apiKey)
-      .setCallback(pickerCallback)
-      .build();
-    picker.setVisible(true);
-  });
+  const initPicker = () => {
+    window.gapi.load("picker", () => {
+      const picker = new window.google.picker.PickerBuilder()
+        .addView(window.google.picker.ViewId.DOCS)
+        .setOAuthToken(authStore.accessToken)
+        .setDeveloperKey(apiKey)
+        .setCallback(pickerCallback)
+        .build();
+      picker.setVisible(true);
+    });
+  };
+
+  if (window.gapi) {
+    initPicker();
+  } else {
+    const script = document.createElement("script");
+    script.src = "https://apis.google.com/js/api.js";
+    script.async = true;
+    script.defer = true;
+    script.onload = initPicker;
+    script.onerror = () =>
+      alert("Google Picker API 스크립트 로드에 실패했습니다.");
+    document.head.appendChild(script);
+  }
 };
 
 const pickerCallback = (data) => {
@@ -177,9 +190,6 @@ const runSummary = async () => {
   summaryResult.value = [];
 
   try {
-    // 사용자가 선택한 모델 기반으로 AI 객체 생성
-    const model = genAI.getGenerativeModel({ model: selectedModel.value });
-
     // 요약을 시작할 때 파일 내용을 파싱합니다.
     await readFileContent();
 
@@ -191,14 +201,18 @@ const runSummary = async () => {
     }
 
     for (const item of selectedTocItems.value) {
-      const prompt = `${summaryPrompt.value}\n---\n[전체 내용]:\n${allContent.value}\n---\n[요약할 주요 항목]:\n${item.title}\n---\n위 내용을 바탕으로 선택된 주요 항목에 초점을 맞춰서 상세하고 구조화된 요약을 생성해줘. 결과는 마크다운(Markdown) 형식으로 제공해줘.`;
+      const response = await api.post("/summary", {
+        model: selectedModel.value,
+        prompt: summaryPrompt.value,
+        content: allContent.value,
+        tocTitle: item.title,
+      });
 
-      const result = await model.generateContent(prompt);
-      const text = await result.response.text();
-      summaryResult.value.push({ title: item.title, content: text });
+      summaryResult.value.push({ title: item.title, content: response.data.text });
     }
   } catch (err) {
-    error.value = "요약 실행 중 오류가 발생했습니다: " + err.message;
+    const message = err.response?.data?.message || err.message || "요약 요청에 실패했습니다.";
+    error.value = "요약 실행 중 오류가 발생했습니다: " + message;
     console.error(err);
   } finally {
     isLoading.value = false;
@@ -213,22 +227,35 @@ const exportToGoogleDocs = async (item) => {
     return;
   }
 
-  if (!gapi.client.docs) {
-    await new Promise((resolve, reject) => {
-      gapi.client
-        .load("https://docs.googleapis.com/$discovery/rest?version=v1")
-        .then(resolve)
-        .catch(reject);
-    });
-  }
+  const loadDocsApi = async () => {
+    if (!window.gapi) {
+      await new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = "https://apis.google.com/js/api.js";
+        script.onload = resolve;
+        script.onerror = () => reject(new Error("Google API 로드 실패"));
+        document.head.appendChild(script);
+      });
+    }
+    if (!window.gapi.client) {
+      await new Promise((resolve) => window.gapi.load("client", resolve));
+    }
+    if (!window.gapi.client.docs) {
+      await window.gapi.client.load(
+        "https://docs.googleapis.com/$discovery/rest?version=v1",
+      );
+    }
+  };
 
   try {
+    await loadDocsApi();
+
     const createResponse = await gapi.client.docs.documents.create({
       title: item.title || "요약된 문서",
     });
 
     const documentId = createResponse.result.documentId;
-    
+
     // Markdown 콘텐츠를 준비합니다.
     const markdownContent = `# ${item.title}\n\n${item.content}`;
 

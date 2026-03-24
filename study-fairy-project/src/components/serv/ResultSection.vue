@@ -48,7 +48,7 @@
           <!-- 미리보기 영역 (토글) -->
           <transition name="fade">
             <div v-if="previewIndex === index" class="result-content-preview">
-              <div v-html="item.content"></div>
+              <div v-html="sanitizedHTML(item.content)"></div>
             </div>
           </transition>
         </li>
@@ -78,6 +78,7 @@
 
 <script setup>
 import { ref, computed } from "vue";
+import DOMPurify from "dompurify";
 
 const props = defineProps({
   // 기존의 단일 문자열이 아닌 배열 형태로 결과를 받습니다.
@@ -91,6 +92,11 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["run", "export"]);
+
+// XSS 방지를 위해 HTML을 스니타이즈하는 함수
+const sanitizedHTML = (html) => {
+  return DOMPurify.sanitize(html);
+};
 
 // --- 페이징 로직 ---
 const currentPage = ref(1);

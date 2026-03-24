@@ -1,29 +1,23 @@
 <template>
   <div class="admin-container">
-    <header class="page-header">
-      <h1 class="page-title">
-        <div class="icon-wrapper">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 002 2 2 2 0 012 2v.65M20 12a8 8 0 11-16 0 8 8 0 0116 0z"
-            />
-          </svg>
-        </div>
-        시스템 언어 관리
-      </h1>
-      <p class="page-subtitle">
-        시스템에서 지원하는 다국어 코드와 명칭을 설정합니다.
-      </p>
-    </header>
+    <PageTitle>
+      <template #icon>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 012 2v.65M20 12a8 8 0 11-16 0 8 8 0 0116 0z"
+          />
+        </svg>
+      </template>
+    </PageTitle>
 
     <!-- 언어 등록 폼 섹션 -->
     <section class="card-section">
@@ -123,9 +117,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import api from "@/service/api"; // Axios 인스턴스 임포트
+import { useAuthStore } from "@/stores/useAuthStore";
+import PageTitle from "@/components/PageTitle.vue";
 
 const isSubmitting = ref(false);
 const languages = ref([]);
+const authStore = useAuthStore();
 
 const newLang = ref({
   langu: "",
@@ -142,21 +140,18 @@ onMounted(() => {
   fetchLanguages();
 });
 
-// 1. 언어 목록 조회 (백엔드 API 연동)
+// 1. 언어 목록 조회 (Axios 사용)
 const fetchLanguages = async () => {
   try {
-    const response = await fetch("http://localhost:3000/api/languages");
-    if (!response.ok) throw new Error("데이터를 불러오는데 실패했습니다.");
-
-    const data = await response.json();
-    languages.value = data;
+    const response = await api.get("/languages");
+    languages.value = response.data;
   } catch (error) {
     console.error("언어 목록 조회 에러:", error);
     alert("언어 목록을 불러오는 중 오류가 발생했습니다.");
   }
 };
 
-// 2. 언어 등록 (백엔드 API 연동)
+// 2. 언어 등록 (Axios 사용)
 const handleRegister = async () => {
   if (!isValid.value) return;
 
@@ -166,23 +161,10 @@ const handleRegister = async () => {
     const registrationData = {
       langu: newLang.value.langu,
       languNm: newLang.value.languNm,
-      createdBy: "ADMIN", // 실제 환경에서는 인증된 사용자 ID를 주입하세요
+      createdBy: authStore.user?.userId || "ADMIN", // 스토어에서 사용자 ID 가져오기
     };
 
-    const response = await fetch("http://localhost:3000/api/languages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(registrationData),
-    });
-
-    if (response.status === 409) {
-      alert("이미 존재하는 언어 코드입니다. 다른 코드를 입력해주세요.");
-      return;
-    }
-
-    if (!response.ok) throw new Error("등록 요청 실패");
+    await api.post("/languages", registrationData);
 
     // 성공 시 입력창 초기화
     newLang.value = { langu: "", languNm: "" };
@@ -192,24 +174,23 @@ const handleRegister = async () => {
     await fetchLanguages();
   } catch (error) {
     console.error("언어 등록 에러:", error);
-    alert("언어 등록 중 오류가 발생했습니다.");
+    if (error.response && error.response.status === 409) {
+      alert("이미 존재하는 언어 코드입니다. 다른 코드를 입력해주세요.");
+    } else {
+      alert("언어 등록 중 오류가 발생했습니다.");
+    }
   } finally {
     isSubmitting.value = false;
   }
 };
 
-// 3. 언어 삭제 (백엔드 API 연동 추가)
+// 3. 언어 삭제 (Axios 사용)
 const handleDelete = async (id) => {
   if (!confirm("정말로 이 언어를 삭제하시겠습니까?")) return;
 
   isSubmitting.value = true;
   try {
-    const response = await fetch(`http://localhost:3000/api/languages/${id}`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) throw new Error("삭제 요청 실패");
-
+    await api.delete(`/languages/${id}`);
     alert("성공적으로 삭제되었습니다.");
     // 삭제 후 최신 목록 갱신
     await fetchLanguages();
@@ -224,7 +205,13 @@ const handleDelete = async (id) => {
 const formatDate = (date) => {
   if (!date) return "-";
   const d = new Date(date);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+    2,
+    "0",
+  )}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(
+    2,
+    "0",
+  )}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 </script>
 
@@ -232,11 +219,6 @@ const formatDate = (date) => {
 /* LanguageManagementView에만 적용되는 고유 스타일 */
 .icon {
   color: #0891b2; /* Cyan color for this page's icon */
-}
-.page-subtitle {
-  color: #64748b;
-  margin-top: 0.5rem;
-  margin-left: 3.25rem;
 }
 .input-hint {
   font-size: 0.75rem;

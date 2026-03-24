@@ -4,58 +4,53 @@
     <div class="user-info">
       <!-- 상태 관리 스토어의 accessToken 여부로 로그인 상태 표시 -->
       <span v-if="authStore.accessToken" class="status logged-in">
-        <span class="dot green"></span> 로그인됨
+        <img
+          v-if="authStore.user?.picture"
+          :src="authStore.user.picture"
+          alt="프로필"
+          class="avatar"
+        />
+        <span class="dot green" v-else></span>
+        <span class="user-name">{{ authStore.user?.name || "사용자" }} 님</span>
+        <span class="role-badge" v-if="authStore.user?.roles?.length">{{
+          authStore.user.roles[0]
+        }}</span>
+        <button @click="handleLogout" class="btn-logout ml-2">로그아웃</button>
       </span>
       <!-- router-link 대신 button으로 변경하여 직접 로그인 함수 호출 -->
-      <button v-else @click="handleLogin" class="btn">로그인</button>
+      <button v-else @click="goToLogin" class="btn btn-primary">로그인</button>
     </div>
   </header>
 </template>
 
 <script setup>
-import { onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const router = useRouter();
 const authStore = useAuthStore();
-let tokenClient;
 
 const goToHome = () => {
   router.push("/");
 };
 
-// 컴포넌트 마운트 시 구글 로그인 클라이언트 초기화
-onMounted(() => {
-  if (window.google) {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-      scope:
-        "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/documents",
-      callback: (tokenResponse) => {
-        if (tokenResponse && tokenResponse.access_token) {
-          console.log(
-            "🔥 로그인 성공! 액세스 토큰:",
-            tokenResponse.access_token,
-          );
-          authStore.setAccessToken(tokenResponse.access_token);
-          // 로그인 성공 후 요약 페이지로 자동 이동
-          router.push("/summary");
-        }
-      },
-    });
-  } else {
-    console.error("Google Identity Services 스크립트가 로드되지 않았습니다.");
-  }
-});
+const goToLogin = () => {
+  router.push("/login");
+};
 
-// 로그인 버튼 클릭 시 실행
-const handleLogin = () => {
-  if (tokenClient) {
-    tokenClient.requestAccessToken();
-  } else {
-    alert("구글 로그인 모듈을 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
-  }
+const handleLogout = () => {
+  // 스토어 상태 초기화
+  authStore.setAccessToken(null);
+  // 사용자 정보가 있다면 함께 초기화 (필요시)
+  if (authStore.user) authStore.user = null;
+
+  // 로컬 스토리지 데이터 초기화
+  localStorage.removeItem("auth_token");
+  localStorage.removeItem("auth_user");
+  localStorage.removeItem("auth_expires_at");
+
+  alert("로그아웃 되었습니다.");
+  router.push("/login");
 };
 </script>
 
@@ -99,5 +94,58 @@ const handleLogin = () => {
 }
 .dot.green {
   background-color: #10b981;
+}
+
+.avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e2e8f0;
+}
+
+.user-name {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.role-badge {
+  font-size: 0.65rem;
+  background-color: #f3e8ff;
+  color: #7e22ce;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.375rem;
+  font-weight: 800;
+}
+
+.btn-primary {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-color: #1d4ed8;
+}
+
+.btn-logout {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-logout:hover {
+  background-color: #e2e8f0;
+  color: #1e293b;
+}
+.ml-2 {
+  margin-left: 0.75rem;
 }
 </style>

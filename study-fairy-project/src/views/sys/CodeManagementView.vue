@@ -1,26 +1,23 @@
 <template>
   <div class="admin-container">
-    <header class="page-header">
-      <h1 class="page-title">
-        <div class="icon-wrapper">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
-            />
-          </svg>
-        </div>
-        공통 코드 관리
-      </h1>
-    </header>
+    <PageTitle>
+      <template #icon>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+          />
+        </svg>
+      </template>
+    </PageTitle>
 
     <!-- Initialization Prompt -->
     <div v-if="needsInitialization" class="initialization-prompt card-section">
@@ -312,6 +309,8 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import api from "@/service/api"; // Axios 인스턴스 임포트
+import PageTitle from "@/components/PageTitle.vue";
 
 const categories = ref([]);
 const selectedCategory = ref(null);
@@ -321,7 +320,6 @@ const selectedGroupCode = ref(null);
 const isSubmitting = ref(false);
 const headFormMode = ref("view");
 
-// 초기 headForm 객체를 생성하는 헬퍼 함수
 const getEmptyHeadForm = () => {
   const form = {
     categoryCode: "",
@@ -329,7 +327,6 @@ const getEmptyHeadForm = () => {
     description: "",
     useYn: 1,
   };
-  // fieldNm1 ~ fieldNm10 빈 값 설정
   for (let i = 1; i <= 10; i++) {
     form[`fieldNm${i}`] = "";
   }
@@ -342,17 +339,15 @@ const editedItem = ref(null);
 const newItems = ref([]);
 const needsInitialization = ref(false);
 
-const API_URL = "http://localhost:3000/api/codes";
 const CATEGORY_CODE_FOR_CATEGORIES = "SYS";
 const GROUP_CODE_FOR_CATEGORIES = "CAT001";
 
 const fetchCategories = async () => {
   try {
-    const res = await fetch(
-      `${API_URL}/items/${CATEGORY_CODE_FOR_CATEGORIES}/${GROUP_CODE_FOR_CATEGORIES}`,
+    const res = await api.get(
+      `/codes/items/${CATEGORY_CODE_FOR_CATEGORIES}/${GROUP_CODE_FOR_CATEGORIES}`,
     );
-    if (!res.ok) throw new Error("Failed to fetch categories");
-    categories.value = await res.json();
+    categories.value = res.data;
     if (categories.value.length > 0) {
       needsInitialization.value = false;
       selectedCategory.value = categories.value[0].subCode;
@@ -369,15 +364,12 @@ const fetchCategories = async () => {
 const handleInitialize = async () => {
   isSubmitting.value = true;
   try {
-    const res = await fetch(`${API_URL}/initialize-categories`, {
-      method: "POST",
-    });
-    const resData = await res.json();
-    if (!res.ok) throw new Error(resData.message || "Initialization failed");
+    const res = await api.post(`/codes/initialize-categories`);
     alert("기본 카테고리가 성공적으로 설정되었습니다.");
     await fetchCategories();
   } catch (error) {
-    alert(`초기화 실패: ${error.message}`);
+    const message = error.response?.data?.message || "Initialization failed";
+    alert(`초기화 실패: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -391,9 +383,8 @@ const onCategoryChange = () => {
 const fetchHeads = async () => {
   if (!selectedCategory.value) return;
   try {
-    const res = await fetch(`${API_URL}/heads/${selectedCategory.value}`);
-    if (!res.ok) throw new Error("Failed to fetch code groups");
-    codeHeads.value = await res.json();
+    const res = await api.get(`/codes/heads/${selectedCategory.value}`);
+    codeHeads.value = res.data;
     if (codeHeads.value.length > 0) {
       selectGroup(codeHeads.value[0]);
     } else {
@@ -411,11 +402,10 @@ const fetchItems = async (groupCode) => {
     return;
   }
   try {
-    const res = await fetch(
-      `${API_URL}/items/${selectedCategory.value}/${groupCode}`,
+    const res = await api.get(
+      `/codes/items/${selectedCategory.value}/${groupCode}`,
     );
-    if (!res.ok) throw new Error("Failed to fetch code items");
-    codeItems.value = await res.json();
+    codeItems.value = res.data;
   } catch (error) {
     console.error(error);
   }
@@ -423,11 +413,8 @@ const fetchItems = async (groupCode) => {
 
 const selectGroup = (head) => {
   if (editingItemId.value) cancelEdit();
-
-  // API에서 넘어온 데이터에 누락된 필드가 있을 수 있으므로 기본 객체와 병합
   const baseForm = getEmptyHeadForm();
   headForm.value = { ...baseForm, ...head };
-
   selectedGroupCode.value = head.groupCode;
   headFormMode.value = "edit";
   fetchItems(head.groupCode);
@@ -437,7 +424,6 @@ const newHead = () => {
   const form = getEmptyHeadForm();
   form.categoryCode = selectedCategory.value;
   headForm.value = form;
-
   selectedGroupCode.value = null;
   codeItems.value = [];
   headFormMode.value = "create";
@@ -453,18 +439,12 @@ const saveHead = async () => {
   headForm.value.categoryCode = selectedCategory.value;
   const isCreate = headFormMode.value === "create";
   const url = isCreate
-    ? `${API_URL}/heads`
-    : `${API_URL}/heads/${selectedCategory.value}/${headForm.value.groupCode}`;
-  const method = isCreate ? "POST" : "PUT";
+    ? `/codes/heads`
+    : `/codes/heads/${selectedCategory.value}/${headForm.value.groupCode}`;
+  const method = isCreate ? "post" : "put";
+
   try {
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(headForm.value),
-    });
-    if (!res.ok) {
-      throw new Error((await res.json()).message);
-    }
+    await api[method](url, headForm.value);
     alert(`그룹이 ${isCreate ? "생성" : "저장"}되었습니다.`);
     await fetchHeads();
     const newGroup = codeHeads.value.find(
@@ -472,7 +452,8 @@ const saveHead = async () => {
     );
     if (newGroup) selectGroup(newGroup);
   } catch (error) {
-    alert(`저장 실패: ${error.message}`);
+    const message = error.response?.data?.message || "저장 실패";
+    alert(`저장 실패: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -481,24 +462,17 @@ const saveHead = async () => {
 const deleteHead = async (groupCode) => {
   if (!confirm(`[${groupCode}] 그룹을 삭제하시겠습니까?`)) return;
   try {
-    const res = await fetch(
-      `${API_URL}/heads/${selectedCategory.value}/${groupCode}`,
-      { method: "DELETE" },
-    );
-    if (!res.ok) {
-      throw new Error((await res.json()).message);
-    }
+    await api.delete(`/codes/heads/${selectedCategory.value}/${groupCode}`);
     alert("삭제되었습니다.");
     fetchHeads();
   } catch (error) {
-    alert(`삭제 실패: ${error.message}`);
+    const message = error.response?.data?.message || "삭제 실패";
+    alert(`삭제 실패: ${message}`);
   }
 };
 
 const addNewItemRow = () => {
   if (editingItemId.value) cancelEdit();
-
-  // 새 항목 추가 시 field1 ~ field10 속성을 기본적으로 포함시킵니다.
   const newItem = {
     subCode: "",
     description: "",
@@ -508,7 +482,6 @@ const addNewItemRow = () => {
   for (let i = 1; i <= 10; i++) {
     newItem[`field${i}`] = "";
   }
-
   newItems.value.push(newItem);
 };
 
@@ -533,28 +506,22 @@ const saveItem = async (itemData, index = null) => {
   isSubmitting.value = true;
   const isCreate = index !== null;
   const url = isCreate
-    ? `${API_URL}/items`
-    : `${API_URL}/items/${selectedCategory.value}/${selectedGroupCode.value}/${itemData.subCode}`;
-  const method = isCreate ? "POST" : "PUT";
+    ? `/codes/items`
+    : `/codes/items/${selectedCategory.value}/${selectedGroupCode.value}/${itemData.subCode}`;
+  const method = isCreate ? "post" : "put";
   const payload = {
     ...itemData,
     categoryCode: selectedCategory.value,
     groupCode: selectedGroupCode.value,
   };
   try {
-    const res = await fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) {
-      throw new Error((await res.json()).message);
-    }
+    await api[method](url, payload);
     alert(`코드가 ${isCreate ? "생성" : "수정"}되었습니다.`);
     if (isCreate) removeNewItemRow(index);
     fetchItems(selectedGroupCode.value);
   } catch (error) {
-    alert(`저장 실패: ${error.message}`);
+    const message = error.response?.data?.message || "저장 실패";
+    alert(`저장 실패: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -563,17 +530,14 @@ const saveItem = async (itemData, index = null) => {
 const deleteItem = async (item) => {
   if (!confirm(`[${item.subCode}] 코드를 삭제하시겠습니까?`)) return;
   try {
-    const res = await fetch(
-      `${API_URL}/items/${item.categoryCode}/${item.groupCode}/${item.subCode}`,
-      { method: "DELETE" },
+    await api.delete(
+      `/codes/items/${item.categoryCode}/${item.groupCode}/${item.subCode}`,
     );
-    if (!res.ok) {
-      throw new Error((await res.json()).message);
-    }
     alert("삭제되었습니다.");
     fetchItems(item.groupCode);
   } catch (error) {
-    alert(`삭제 실패: ${error.message}`);
+    const message = error.response?.data?.message || "삭제 실패";
+    alert(`삭제 실패: ${message}`);
   }
 };
 

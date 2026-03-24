@@ -1,26 +1,23 @@
 <template>
   <div class="admin-container">
-    <header class="page-header">
-      <h1 class="page-title">
-        <div class="icon-wrapper">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="icon"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 6h16M4 12h16M4 18h7"
-            />
-          </svg>
-        </div>
-        메뉴 관리
-      </h1>
-    </header>
+    <PageTitle>
+      <template #icon>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="icon"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M4 6h16M4 12h16M4 18h7"
+          />
+        </svg>
+      </template>
+    </PageTitle>
 
     <section class="card-section">
       <div class="card-header flex justify-between items-center">
@@ -97,6 +94,15 @@
           <div class="form-group full-width">
             <label>메뉴명 *</label>
             <input type="text" v-model="menuForm.menuNm" required />
+          </div>
+
+          <div class="form-group full-width">
+            <label>설명 (Description)</label>
+            <input
+              type="text"
+              v-model="menuForm.description"
+              placeholder="메뉴에 대한 설명을 입력하세요"
+            />
           </div>
 
           <div class="form-group">
@@ -273,6 +279,9 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
+import { useAuthStore } from "@/stores/useAuthStore";
+import api from "@/service/api";
+import PageTitle from "@/components/PageTitle.vue";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
@@ -282,10 +291,13 @@ const expandedMenus = ref([]);
 // 빈 배열로 초기화
 const availableLanguages = ref([]);
 
+const authStore = useAuthStore();
+
 const menuForm = ref({
   langu: "KO",
   menuId: "",
   menuNm: "",
+  description: "",
   parentMenuId: "",
   path: "",
   menuLevel: 1,
@@ -324,16 +336,10 @@ const toggleMenu = (id) => {
 // --- Languages 데이터 호출 함수 추가 ---
 const fetchLanguages = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/languages");
-    if (res.ok) {
-      availableLanguages.value = await res.json();
-
-      // 언어 목록이 비어있지 않고, 현재 폼의 언어가 비어있다면 첫 번째 언어로 기본 설정
-      if (availableLanguages.value.length > 0 && !menuForm.value.langu) {
-        menuForm.value.langu = availableLanguages.value[0].langu;
-      }
-    } else {
-      console.error("Failed to fetch languages:", res.status);
+    const res = await api.get("/languages");
+    availableLanguages.value = res.data;
+    if (availableLanguages.value.length > 0 && !menuForm.value.langu) {
+      menuForm.value.langu = availableLanguages.value[0].langu;
     }
   } catch (error) {
     console.error("Error fetching languages:", error);
@@ -342,13 +348,8 @@ const fetchLanguages = async () => {
 
 const fetchMenus = async () => {
   try {
-    const res = await fetch("http://localhost:3000/api/menus");
-    if (res.ok) {
-      menuTree.value = await res.json();
-    } else {
-      console.error("Failed to fetch menus:", res.status);
-      menuTree.value = [];
-    }
+    const res = await api.get("/menus");
+    menuTree.value = res.data;
   } catch (error) {
     console.error("Error fetching menus:", error);
     menuTree.value = [];
@@ -358,27 +359,19 @@ const fetchMenus = async () => {
 const handleRegisterOrUpdate = async () => {
   isSubmitting.value = true;
   try {
-    const url = isEditMode.value
-      ? `http://localhost:3000/api/menus/${editTargetId.value}`
-      : "http://localhost:3000/api/menus";
-    const res = await fetch(url, {
-      method: isEditMode.value ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...menuForm.value,
-        parentMenuId: menuForm.value.parentMenuId || null,
-      }),
-    });
-    if (res.ok) {
-      alert("완료되었습니다.");
-      resetForm();
-      await fetchMenus(); // 데이터 다시 로드
-    } else {
-      const errorData = await res.json();
-      alert(`오류: ${errorData.message || "작업에 실패했습니다."}`);
-    }
+    const url = isEditMode.value ? `/menus/${editTargetId.value}` : "/menus";
+    const method = isEditMode.value ? "put" : "post";
+    const payload = {
+      ...menuForm.value,
+      parentMenuId: menuForm.value.parentMenuId || null,
+    };
+    await api[method](url, payload);
+    alert("완료되었습니다.");
+    resetForm();
+    await fetchMenus(); // 데이터 다시 로드
   } catch (error) {
-    alert(`네트워크 오류: ${error.message}`);
+    const message = error.response?.data?.message || "작업에 실패했습니다.";
+    alert(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -395,13 +388,13 @@ const resetForm = () => {
   isEditMode.value = false;
   editTargetId.value = null;
   menuForm.value = {
-    // 폼 초기화 시 불러온 언어 목록 중 첫 번째를 기본으로 지정합니다
     langu:
       availableLanguages.value.length > 0
         ? availableLanguages.value[0].langu
         : "KO",
     menuId: "",
     menuNm: "",
+    description: "",
     parentMenuId: "",
     path: "",
     menuLevel: 1,
@@ -414,18 +407,12 @@ const deleteMenu = async (id) => {
   if (!confirm("하위 메뉴까지 모두 삭제될 수 있습니다. 정말 삭제하시겠습니까?"))
     return;
   try {
-    const res = await fetch(`http://localhost:3000/api/menus/${id}`, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      alert("삭제되었습니다.");
-      await fetchMenus(); // 데이터 다시 로드
-    } else {
-      const errorData = await res.json();
-      alert(`오류: ${errorData.message || "삭제에 실패했습니다."}`);
-    }
+    await api.delete(`/menus/${id}`);
+    alert("삭제되었습니다.");
+    await fetchMenus(); // 데이터 다시 로드
   } catch (error) {
-    alert(`네트워크 오류: ${error.message}`);
+    const message = error.response?.data?.message || "삭제에 실패했습니다.";
+    alert(`오류: ${message}`);
   }
 };
 

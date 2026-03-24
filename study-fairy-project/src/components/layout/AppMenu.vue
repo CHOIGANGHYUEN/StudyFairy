@@ -59,21 +59,32 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
+import { useAuthStore } from "@/stores/useAuthStore";
+import api from "@/service/api";
 
 const menus = ref([]);
 const activeMenuId = ref(null); // 1차 메뉴 호버 상태
 const activeSubMenuId = ref(null); // 2차 메뉴 호버 상태
 
-// ✅ 3단계까지 useYn 필터링 수행
+const authStore = useAuthStore();
+
+// ✅ 부모가 비활성(useYn=0)이더라도 활성 자식이 있으면 부모는 보이도록 필터링 로직 수정
 const visibleMenus = computed(() => {
   const filterActive = (list) => {
     return list
-      .filter((m) => m.useYn === 1)
-      .map((m) => ({
-        ...m,
-        children: m.children ? filterActive(m.children) : [],
-      }));
+      .map(m => {
+        // 1. 자식들을 먼저 재귀적으로 필터링
+        const filteredChildren = m.children ? filterActive(m.children) : [];
+        return {
+          ...m,
+          children: filteredChildren,
+        };
+      })
+      .filter(m => {
+        // 2. 자신(m)이 활성이거나, 필터링된 자식이 하나라도 있으면 표시
+        return m.useYn === 1 || (m.children && m.children.length > 0);
+      });
   };
   return filterActive(menus.value);
 });
@@ -86,16 +97,27 @@ const resetMenus = () => {
 };
 
 const fetchMenus = async () => {
+  // 로그인되지 않은 상태면 메뉴를 비웁니다.
+  if (!authStore.accessToken) {
+    menus.value = [];
+    return;
+  }
+
   try {
-    const response = await fetch("http://localhost:3000/api/menus");
-    if (!response.ok) throw new Error("Network response was not ok");
-    menus.value = await response.json();
+    const response = await api.get("/menus");
+    menus.value = response.data;
   } catch (error) {
     console.error("메뉴 트리 로드 실패:", error);
+    // 인터셉터가 401을 처리하므로, 여기서는 메뉴를 비워주기만 하면 됩니다.
+    menus.value = [];
   }
 };
 
 onMounted(() => fetchMenus());
+watch(
+  () => authStore.accessToken,
+  () => fetchMenus(),
+);
 </script>
 
 <style scoped>

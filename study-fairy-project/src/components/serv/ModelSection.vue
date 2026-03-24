@@ -14,24 +14,6 @@
             {{ model.name }}
           </option>
         </optgroup>
-        <optgroup label="OpenAI">
-          <option
-            v-for="model in openAiModels"
-            :key="model.value"
-            :value="model.value"
-          >
-            {{ model.name }}
-          </option>
-        </optgroup>
-        <optgroup label="Anthropic Claude">
-          <option
-            v-for="model in claudeModels"
-            :key="model.value"
-            :value="model.value"
-          >
-            {{ model.name }}
-          </option>
-        </optgroup>
       </select>
 
       <!-- 선택된 모델의 상세 설명 표시 -->
@@ -108,48 +90,8 @@ const geminiModels = ref([
   },
 ]);
 
-const openAiModels = ref([
-  {
-    value: "gpt-4o",
-    name: "GPT-4o",
-    desc: "OpenAI의 가장 빠르고 강력한 플래그십 모델",
-  },
-  {
-    value: "gpt-4-turbo",
-    name: "GPT-4 Turbo",
-    desc: "강력한 추론 및 최신 지식 기반",
-  },
-  {
-    value: "gpt-3.5-turbo",
-    name: "GPT-3.5 Turbo",
-    desc: "빠른 응답 속도 및 가성비 높은 모델",
-  },
-]);
-
-const claudeModels = ref([
-  {
-    value: "claude-3-opus",
-    name: "Claude 3 Opus",
-    desc: "최고 수준의 지능과 성능을 갖춘 모델",
-  },
-  {
-    value: "claude-3-sonnet",
-    name: "Claude 3 Sonnet",
-    desc: "성능과 속도의 이상적인 균형",
-  },
-  {
-    value: "claude-3-haiku",
-    name: "Claude 3 Haiku",
-    desc: "매우 빠르고 가벼운 응답 속도",
-  },
-]);
-
 // 모든 모델을 하나의 배열로 합쳐서 검색에 사용
-const allModels = computed(() => [
-  ...geminiModels.value,
-  ...openAiModels.value,
-  ...claudeModels.value,
-]);
+const allModels = computed(() => [...geminiModels.value]);
 
 // 현재 선택된 모델의 정보를 가져오는 computed
 const selectedModelInfo = computed(() => {

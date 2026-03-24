@@ -1,7 +1,7 @@
-const languageMapper = require("../mapper/languageMapper");
+const { Language } = require("../models");
 
 exports.getLanguages = async () => {
-  return await languageMapper.findAll();
+  return await Language.findAll();
 };
 
 exports.createLanguage = async (languageData) => {
@@ -13,13 +13,13 @@ exports.createLanguage = async (languageData) => {
   }
 
   try {
-    const result = await languageMapper.create(languageData);
+    const newLanguage = await Language.create(languageData);
     return {
       message: "성공적으로 등록되었습니다.",
-      insertId: result.insertId,
+      insertId: newLanguage.id,
     };
   } catch (err) {
-    if (err.code === "ER_DUP_ENTRY") {
+    if (err instanceof require('sequelize').UniqueConstraintError) {
       const error = new Error("이미 존재하는 언어 코드(langu)입니다.");
       error.statusCode = 409;
       throw error;
@@ -36,8 +36,11 @@ exports.updateLanguage = async (id, languageData) => {
     throw error;
   }
 
-  const result = await languageMapper.update(id, languageData);
-  if (result.affectedRows === 0) {
+  const [affectedRows] = await Language.update(languageData, {
+    where: { id },
+  });
+
+  if (affectedRows === 0) {
     const error = new Error("수정할 언어를 찾을 수 없습니다.");
     error.statusCode = 404;
     throw error;
@@ -47,8 +50,11 @@ exports.updateLanguage = async (id, languageData) => {
 };
 
 exports.deleteLanguage = async (id) => {
-  const result = await languageMapper.delete(id);
-  if (result.affectedRows === 0) {
+  const affectedRows = await Language.destroy({
+    where: { id },
+  });
+
+  if (affectedRows === 0) {
     const error = new Error("삭제할 언어를 찾을 수 없습니다.");
     error.statusCode = 404;
     throw error;

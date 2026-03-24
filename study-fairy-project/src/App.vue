@@ -4,7 +4,7 @@
     <AppHeader />
 
     <!-- 2. Menu 영역 (동적 탭) -->
-    <AppMenu :tabs="menuTabs" />
+    <NavMenu />
 
     <!-- 3. Body 영역 (선택된 화면 표시 영역) -->
     <main class="app-body">
@@ -17,16 +17,9 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
 import AppHeader from "./components/layout/AppHeader.vue";
-import AppMenu from "./components/layout/AppMenu.vue";
+import NavMenu from "./components/layout/NavMenu.vue";
 import AppFooter from "./components/layout/AppFooter.vue";
-
-// 탭 메뉴 설정 (배열에 아이템을 추가하면 메뉴가 자동으로 늘어납니다)
-const menuTabs = ref([
-  { name: "요약기", path: "/summary" },
-  { name: "빈템플릿", path: "/empty" },
-]);
 </script>
 
 <style>
