@@ -15,6 +15,23 @@ exports.getAllSchedules = async (req, res, next) => {
     next(error);
   }
 };
+// backend/controllers/scheduleController.js 에 추가
+
+exports.getMinMaxDates = async (req, res, next) => {
+  try {
+    const filters = {};
+    if (req.query.schGroupCode) filters.schGroupCode = req.query.schGroupCode;
+    if (req.query.userId) filters.userId = req.query.userId;
+
+    // 서비스 함수 호출
+    const result = await scheduleService.getMinMaxDates(filters);
+
+    // { minSchDate, maxSchDate } 객체 반환
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
 
 exports.createSchedule = async (req, res, next) => {
   try {

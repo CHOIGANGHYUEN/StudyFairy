@@ -161,6 +161,97 @@
       </form>
     </section>
 
+    <!-- Search Section -->
+    <section class="card-section search-section">
+      <div class="search-grid">
+        <div class="form-group">
+          <label for="searchSchGroupCode">일정 그룹 (Group)</label>
+          <select id="searchSchGroupCode" v-model="searchParams.schGroupCode">
+            <option value="">전체</option>
+            <option
+              v-for="item in sys001Items"
+              :key="item.subCode"
+              :value="item.subCode"
+            >
+              {{ item.description || item.subCode }} ({{ item.subCode }})
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="searchUserId">사용자 ID</label>
+          <input
+            type="text"
+            id="searchUserId"
+            v-model="searchParams.userId"
+            placeholder="예: admin"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="searchSchYear">연도 (Year)</label>
+          <select id="searchSchYear" v-model="searchParams.schYear">
+            <option value="">전체</option>
+            <option v-for="y in yearOptions" :key="y" :value="String(y)">
+              {{ y }}년
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="searchSchMonth">월 (Month)</label>
+          <select id="searchSchMonth" v-model="searchParams.schMonth">
+            <option value="">전체</option>
+            <option
+              v-for="m in 12"
+              :key="m"
+              :value="String(m).padStart(2, '0')"
+            >
+              {{ m }}월
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="searchSchDate">일자 (Date)</label>
+          <input
+            type="date"
+            id="searchSchDate"
+            v-model="searchParams.schDate"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+      </div>
+
+      <div class="search-actions">
+        <div class="date-summary">
+          <span class="summary-label">최초등록일:</span>
+          <span class="summary-value">{{ minSchDate }}</span>
+          <span class="summary-divider">|</span>
+          <span class="summary-label">최종등록일:</span>
+          <span class="summary-value">{{ maxSchDate }}</span>
+        </div>
+        <button class="btn-primary search-btn" @click="handleSearch">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          조회
+        </button>
+      </div>
+    </section>
+
     <!-- Table Section -->
     <section class="card-section list-section">
       <div class="card-header list-header">
@@ -224,6 +315,15 @@
           </tbody>
         </table>
       </div>
+
+      <!-- 페이징 컴포넌트 영역 -->
+      <div class="pagination-wrapper" v-if="totalPages > 0">
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @page-change="handlePageChange"
+        />
+      </div>
     </section>
   </div>
 </template>
@@ -233,8 +333,15 @@ import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import api from "@/service/api";
 import PageTitle from "@/components/PageTitle.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const authStore = useAuthStore();
+
+// Pagination State
+const currentPage = ref(1);
+const totalPages = ref(1);
+const totalCount = ref(0);
+const pageSize = 10; // Number of items per page
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
@@ -246,6 +353,17 @@ const yearOptions = ref([currentYear - 1, currentYear, currentYear + 1]);
 const schedules = ref([]);
 const sys001Items = ref([]); // SGR001, SGR002 등
 const sys002Items = ref([]); // schCode 항목들
+
+const searchParams = ref({
+  schGroupCode: "",
+  userId: "",
+  schYear: "",
+  schMonth: "",
+  schDate: "",
+});
+
+const minSchDate = ref("-");
+const maxSchDate = ref("-");
 
 const form = ref({
   schGroupCode: "",
@@ -260,6 +378,7 @@ const form = ref({
 onMounted(async () => {
   await fetchCodes();
   await fetchSchedules();
+  await fetchMinMaxDates();
 });
 
 const fetchCodes = async () => {
@@ -276,13 +395,82 @@ const fetchCodes = async () => {
   }
 };
 
-const fetchSchedules = async () => {
+const fetchSchedules = async (page = 1) => {
   try {
-    const res = await api.get("/schedules");
-    schedules.value = res.data;
+    const res = await api.get("/schedules", {
+      params: {
+        page: page,
+        limit: pageSize,
+        ...(searchParams.value.schGroupCode && {
+          schGroupCode: searchParams.value.schGroupCode,
+        }),
+        ...(searchParams.value.userId && { userId: searchParams.value.userId }),
+        ...(searchParams.value.schYear && {
+          schYear: searchParams.value.schYear,
+        }),
+        ...(searchParams.value.schMonth && {
+          schMonth: searchParams.value.schMonth,
+        }),
+        ...(searchParams.value.schDate && {
+          schDate: searchParams.value.schDate,
+        }),
+      },
+    });
+
+    // 백엔드 응답이 페이징 객체인지 단순 배열인지 확인하여 분기 처리 (조회 안 되는 버그 수정)
+    if (res.data && res.data.data) {
+      schedules.value = res.data.data;
+      totalPages.value = res.data.totalPages || 1;
+      totalCount.value = res.data.totalCount || res.data.data.length;
+    } else if (Array.isArray(res.data)) {
+      // 배열 전체가 반환될 경우 프론트엔드에서 페이징(slice) 처리
+      const allData = res.data;
+      totalCount.value = allData.length;
+      totalPages.value = Math.ceil(allData.length / pageSize) || 1;
+      schedules.value = allData.slice((page - 1) * pageSize, page * pageSize);
+    } else {
+      schedules.value = [];
+      totalPages.value = 1;
+      totalCount.value = 0;
+    }
+
+    currentPage.value = page;
   } catch (error) {
     console.error("일정 목록 조회 실패:", error);
+    schedules.value = [];
+    totalPages.value = 1;
+    totalCount.value = 0;
   }
+};
+
+const fetchMinMaxDates = async () => {
+  try {
+    // 년도, 월, 일 필터를 무시하고 오직 그룹코드와 사용자ID만으로 전체 일정의 최소/최대 값을 구함
+    const params = {};
+    if (searchParams.value.schGroupCode)
+      params.schGroupCode = searchParams.value.schGroupCode;
+    if (searchParams.value.userId) params.userId = searchParams.value.userId;
+
+    // 백엔드 집계 API 호출
+    const res = await api.get("/schedules/min-max", { params });
+    const { minSchDate: minD, maxSchDate: maxD } = res.data;
+
+    minSchDate.value = minD ? formatDateOnly(minD) : "-";
+    maxSchDate.value = maxD ? formatDateOnly(maxD) : "-";
+  } catch (error) {
+    console.error("최초/최종 등록일 조회 실패:", error);
+    minSchDate.value = "-";
+    maxSchDate.value = "-";
+  }
+};
+
+const handlePageChange = (page) => {
+  fetchSchedules(page);
+};
+
+const handleSearch = () => {
+  fetchSchedules(1);
+  fetchMinMaxDates();
 };
 
 const handleSubmit = async () => {
@@ -323,6 +511,7 @@ const handleSubmit = async () => {
 
     resetForm();
     await fetchSchedules();
+    await fetchMinMaxDates(); // 일괄 등록/수정 후 최소/최대 일자 갱신
   } catch (error) {
     const message = error.response?.data?.message || "작업 실패";
     alert(`오류: ${message}`);
@@ -360,6 +549,7 @@ const deleteSchedule = async (id) => {
     alert("삭제되었습니다.");
     if (isEditMode.value && editTargetId.value === id) resetForm();
     await fetchSchedules();
+    await fetchMinMaxDates(); // 삭제 후 갱신
   } catch (error) {
     const message = error.response?.data?.message || "삭제 실패";
     alert(`오류: ${message}`);
@@ -447,5 +637,75 @@ const formatDateOnly = (dateString) => {
 }
 .text-blue-700 {
   color: #1d4ed8;
+}
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5rem;
+}
+
+/* Search Section Styles */
+.search-section {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+.search-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+.date-summary {
+  font-size: 0.95rem;
+  color: #475569;
+  background: #f8fafc;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+.summary-label {
+  font-weight: 700;
+  color: #334155;
+}
+.summary-value {
+  font-weight: 600;
+  color: #2563eb;
+  margin-left: 0.25rem;
+}
+.summary-divider {
+  margin: 0 0.75rem;
+  color: #cbd5e1;
+}
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+}
+.icon-sm {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+@media (max-width: 1024px) {
+  .search-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .search-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-actions {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 </style>

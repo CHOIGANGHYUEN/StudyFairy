@@ -11,6 +11,13 @@ exports.getSchedules = async (filters = {}) => {
   });
 };
 
+exports.getMinMaxDates = async (filters = {}) => {
+  // DB 쿼리를 통해 최소/최대 날짜를 집계하여 가져옵니다.
+  const minDate = await Schedule.min("schDate", { where: filters });
+  const maxDate = await Schedule.max("schDate", { where: filters });
+  return { minSchDate: minDate, maxSchDate: maxDate };
+};
+
 exports.createSchedule = async (scheduleData) => {
   // 단일 일정을 생성합니다.
   return await Schedule.create(scheduleData);

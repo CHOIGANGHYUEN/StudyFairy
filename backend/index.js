@@ -28,6 +28,8 @@ const authRoutes = require("./routes/authRoutes");
 const userRoleRoutes = require("./routes/userRoleRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
 const scheduleDetailRoutes = require("./routes/scheduleDetailRoutes");
+const interactRoutes = require("./routes/interactRoutes"); // interact 라우트 추가
+const unitRoutes = require("./routes/unitRoutes");
 const { verifyToken } = require("./middleware/authMiddleware");
 
 app.use("/api/auth", authRoutes); // 인증 라우트 추가
@@ -37,10 +39,12 @@ app.use("/api/languages", verifyToken, languageRoutes);
 app.use("/api/codes", verifyToken, codeRoutes);
 app.use("/api/roles", verifyToken, roleRoutes);
 app.use("/api/summary", verifyToken, summaryRoutes);
+app.use("/api/interact", verifyToken, interactRoutes); // interact 라우트 추가
 app.use("/api/role-menus", verifyToken, roleMenuRoutes);
 app.use("/api/user-roles", verifyToken, userRoleRoutes);
 app.use("/api/schedules", verifyToken, scheduleRoutes);
 app.use("/api/schedule-details", verifyToken, scheduleDetailRoutes);
+app.use("/api/units", verifyToken, unitRoutes);
 
 // morgan 로그를 winston 스트림으로 출력
 app.use(morgan("combined", { stream: logger.stream }));

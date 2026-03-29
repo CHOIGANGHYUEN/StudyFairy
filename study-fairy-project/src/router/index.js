@@ -16,6 +16,7 @@ import MenuRoleManagementView from "@/views/sys/MenuRoleManagementView.vue";
 import RoleMainManagementView from "@/views/sys/RoleMainManagementView.vue";
 import ScheduleManagementView from "@/views/sys/ScheduleManagementView.vue";
 import ScheduleCalendarView from "@/views/sch/ScheduleCalendarView.vue";
+import UnitManagementView from "@/views/sys/UnitManagementView.vue";
 import api from "@/service/api";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
@@ -96,6 +97,23 @@ const routes = [
     path: "/sys/schedules",
     name: "schedules",
     component: ScheduleManagementView,
+  },
+  {
+    path: "/sys/units",
+    name: "units",
+    component: UnitManagementView,
+  },
+  // src/router/index.js (또는 관련 라우터 설정 파일) 내부의 routes 배열에 추가
+
+  {
+    path: "/pdf",
+    name: "PdfExtract",
+    // PdfExtractView.vue 컴포넌트의 실제 경로에 맞게 지정해주세요.
+    component: () => import("@/views/serv/PdfExtractView.vue"),
+    meta: {
+      requiresAuth: true, // 프로젝트 설정에 따라 인증이 필요하다면 추가
+      title: "PDF 텍스트 추출", // PageTitle.vue 컴포넌트에서 활용할 폴백 타이틀
+    },
   },
 ];
 

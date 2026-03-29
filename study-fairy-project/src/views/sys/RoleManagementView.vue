@@ -19,131 +19,20 @@
       </template>
     </PageTitle>
 
-    <!-- Form Section: 권한 등록/수정 폼 -->
-    <section class="card-section">
-      <div class="card-header flex justify-between items-center">
-        <h2 class="section-title">
-          {{ isEditMode ? "권한 정보 수정" : "새 권한 등록" }}
-        </h2>
-        <button
-          v-if="isEditMode"
-          @click="resetForm"
-          class="text-sm font-medium text-blue-600 hover:underline"
-        >
-          취소 및 신규 전환
-        </button>
-      </div>
-      <form @submit.prevent="handleSubmit">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="roleId">권한 ID (Role ID) *</label>
-            <input
-              type="text"
-              id="roleId"
-              v-model="form.roleId"
-              placeholder="예: ROLE_ADMIN"
-              required
-              :disabled="isEditMode || isSubmitting"
-            />
-          </div>
-          <div class="form-group">
-            <label for="description">설명 (Description)</label>
-            <input
-              type="text"
-              id="description"
-              v-model="form.description"
-              placeholder="예: 운영 관리자"
-              :disabled="isSubmitting"
-            />
-          </div>
-          <div class="form-group">
-            <label for="useYn">사용 여부</label>
-            <select
-              id="useYn"
-              v-model.number="form.useYn"
-              :disabled="isSubmitting"
-            >
-              <option :value="1">사용</option>
-              <option :value="0">미사용</option>
-            </select>
-          </div>
-        </div>
-        <button
-          type="submit"
-          class="btn-primary"
-          :disabled="isSubmitting || !form.roleId"
-        >
-          {{
-            isSubmitting ? "처리 중..." : isEditMode ? "수정하기" : "등록하기"
-          }}
-        </button>
-      </form>
-    </section>
+    <RoleForm
+        :is-edit-mode="isEditMode"
+        :is-submitting="isSubmitting"
+        v-model:formData="form"
+        @submit="handleSubmit"
+        @reset="resetForm"
+    />
 
-    <!-- Table Section: 권한 목록 -->
-    <section class="card-section list-section">
-      <div class="card-header list-header">
-        <h2 class="section-title">등록된 권한 목록</h2>
-        <span class="badge">{{ roles.length }}개</span>
-      </div>
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th class="w-16">ID</th>
-              <th>권한 ID</th>
-              <th>설명</th>
-              <th class="w-24 text-center">상태</th>
-              <th>생성자</th>
-              <th>생성일시</th>
-              <th class="w-24 text-center">관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="role in roles" :key="role.id">
-              <td>{{ role.id }}</td>
-              <td class="font-bold text-blue-700">{{ role.roleId }}</td>
-              <td>{{ role.description }}</td>
-              <td class="text-center">
-                <span
-                  :class="[
-                    'status-badge',
-                    role.useYn === 1 ? 'active' : 'inactive',
-                  ]"
-                >
-                  {{ role.useYn === 1 ? "사용" : "미사용" }}
-                </span>
-              </td>
-              <td>{{ role.createdBy || "-" }}</td>
-              <td>{{ formatDate(role.createdAt) }}</td>
-              <td class="text-center">
-                <div class="action-buttons">
-                  <button
-                    @click="editRole(role)"
-                    class="btn-icon"
-                    :disabled="isSubmitting"
-                    title="수정"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    @click="deleteRole(role.id)"
-                    class="btn-icon"
-                    :disabled="isSubmitting"
-                    title="삭제"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="roles.length === 0">
-              <td colspan="7" class="empty-state">등록된 권한이 없습니다.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <RoleList
+        :roles="roles"
+        :is-submitting="isSubmitting"
+        @edit="editRole"
+        @delete="deleteRole"
+    />
   </div>
 </template>
 
@@ -152,6 +41,8 @@ import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import api from "@/service/api";
 import PageTitle from "@/components/PageTitle.vue";
+import RoleForm from "@/components/sys/role/RoleForm.vue";
+import RoleList from "@/components/sys/role/RoleList.vue";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
@@ -189,8 +80,8 @@ const handleSubmit = async () => {
       roleId: form.value.roleId,
       description: form.value.description,
       useYn: form.value.useYn,
-      createdBy: authStore.user?.id || "SYSTEM",
-      changedBy: authStore.user?.id || "SYSTEM",
+      createdBy: authStore.user?.userid || "SYSTEM",
+      changedBy: authStore.user?.userid || "SYSTEM",
     };
 
     await api[method](url, payload);
@@ -244,65 +135,10 @@ const resetForm = () => {
     useYn: 1,
   };
 };
-
-const formatDate = (dateString) => {
-  if (!dateString) return "-";
-  const d = new Date(dateString);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
 </script>
 
 <style scoped>
 .icon {
   color: #8b5cf6;
-  width: 1.5rem;
-  height: 1.5rem;
-}
-.flex {
-  display: flex;
-}
-.justify-between {
-  justify-content: space-between;
-}
-.items-center {
-  align-items: center;
-}
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.badge {
-  background-color: #f3e8ff;
-  color: #7e22ce;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.table-container {
-  overflow-x: auto;
-}
-.data-table tr:hover td {
-  background-color: #f8fafc;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
-}
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  font-weight: 600;
-}
-.status-badge.active {
-  background-color: #dcfce7;
-  color: #166534;
-}
-.status-badge.inactive {
-  background-color: #f1f5f9;
-  color: #475569;
 }
 </style>

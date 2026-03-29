@@ -29,8 +29,56 @@
         선택된 조건의 마스터 일정이 없습니다. [관리자 > 일정등록]에서 먼저
         생성해야 합니다.
       </p>
+
+      <div class="view-switcher">
+        <button
+          @click="setView('calendar')"
+          :class="{ active: currentView === 'calendar' }"
+        >
+          캘린더
+        </button>
+        <button
+          @click="setView('board')"
+          :class="{ active: currentView === 'board' }"
+        >
+          게시판
+        </button>
+        <button
+          @click="setView('both')"
+          :class="{ active: currentView === 'both' }"
+        >
+          캘린더+게시판
+        </button>
+      </div>
     </div>
-    <FullCalendar :options="calendarOptions" />
+
+    <!-- 캘린더 + 게시판 뷰 -->
+    <div v-if="currentView === 'both'" class="view-container both-view">
+      <div class="calendar-section">
+        <FullCalendar :options="calendarOptions" />
+      </div>
+      <div class="board-section">
+        <ScheduleBoardView
+          :events="events"
+          @event-click="handleEventClick"
+          @new-post="handleNewPost"
+        />
+      </div>
+    </div>
+
+    <!-- 캘린더 단독 뷰 -->
+    <div v-else-if="currentView === 'calendar'" class="view-container">
+      <FullCalendar :options="calendarOptions" />
+    </div>
+
+    <!-- 게시판 단독 뷰 -->
+    <div v-else-if="currentView === 'board'" class="view-container">
+      <ScheduleBoardView
+        :events="events"
+        @event-click="handleEventClick"
+        @new-post="handleNewPost"
+      />
+    </div>
 
     <ScheduleDetailModal
       :visible="isModalVisible"
@@ -39,7 +87,9 @@
       :schGroupCode="schGroupCode"
       :schYear="currentYear"
       :schMonth="currentMonth"
+      :detailData="selectedDetail"
       @close="isModalVisible = false"
+      @save-keep-open="fetchScheduleDetails"
       @save-success="handleSaveSuccess"
     />
   </div>
@@ -52,10 +102,18 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import PageTitle from "@/components/PageTitle.vue";
 import ScheduleDetailModal from "@/components/ScheduleDetailModal.vue";
+import ScheduleBoardView from "@/components/ScheduleBoardView.vue";
 import api from "@/service/api";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const authStore = useAuthStore();
+
+// --- View State ---
+const currentView = ref("calendar"); // 'calendar', 'board', 'both'
+
+function setView(view) {
+  currentView.value = view;
+}
 
 // --- Reactive State ---
 const schGroupCode = ref("");
@@ -68,6 +126,7 @@ const events = ref([]);
 // Modal control state
 const isModalVisible = ref(false);
 const selectedDate = ref("");
+const selectedDetail = ref(null);
 
 // --- Lifecycle Hooks ---
 onMounted(async () => {
@@ -77,7 +136,7 @@ onMounted(async () => {
 // --- Methods ---
 
 async function fetchScheduleGroups() {
-  const response = await api.get("/api/codes/items/SYS/SYS001").catch(() => {
+  const response = await api.get("/codes/items/SYS/SYS001").catch(() => {
     console.error("Failed to fetch schedule groups. Using fallback.");
     return { data: [] };
   });
@@ -101,9 +160,17 @@ const calendarOptions = reactive({
     center: "title",
     right: "dayGridMonth",
   },
+  displayEventTime: true,
+  displayEventEnd: true,
+  eventTimeFormat: {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  },
   events: events,
   dateClick: handleDateClick,
   datesSet: handleDatesSet,
+  eventClick: handleEventClick,
 });
 
 function handleSaveSuccess() {
@@ -132,7 +199,7 @@ async function fetchScheduleData() {
 
   // 1. Find the parent schedule (sysSchedule)
   try {
-    const response = await api.get("/api/schedules", {
+    const response = await api.get("/schedules", {
       params: {
         schGroupCode: schGroupCode.value,
         userId: authStore.user.userId,
@@ -162,15 +229,18 @@ async function fetchScheduleDetails() {
   if (!scheduleId.value) return;
 
   try {
-    const response = await api.get("/api/schedule-details", {
+    const response = await api.get("/schedule-details", {
       params: { scheduleId: scheduleId.value },
     });
     // Map backend data to FullCalendar event format
     events.value = response.data.map((detail) => ({
       id: detail.id,
       title: detail.title,
-      start: detail.schDate,
-      allDay: true,
+      start: detail.startTime
+        ? detail.startTime.replace(" ", "T")
+        : detail.schDate,
+      end: detail.endTime ? detail.endTime.replace(" ", "T") : null,
+      allDay: !detail.startTime, // 시간이 등록되지 않았다면 종일 일정으로 표시
       extendedProps: detail,
     }));
   } catch (error) {
@@ -188,6 +258,28 @@ function handleDateClick(arg) {
     return;
   }
   selectedDate.value = arg.dateStr;
+  selectedDetail.value = null; // 신규 등록 모드
+  isModalVisible.value = true;
+}
+
+// 캘린더에 등록된 기존 일정 클릭 시 (상세 보기/수정)
+function handleEventClick(arg) {
+  const detail = arg.event.extendedProps || arg.event; // 보드 뷰에서 오는 이벤트는 extendedProps가 없음
+  selectedDate.value = detail.schDate;
+  selectedDetail.value = detail; // 수정/상세 모드
+  isModalVisible.value = true;
+}
+
+// 게시판 뷰에서 '글쓰기' 버튼 클릭 시
+function handleNewPost() {
+  if (!scheduleId.value) {
+    alert(
+      "이 월에 대한 마스터 일정이 없어 작업을 추가할 수 없습니다. 관리자에게 문의하세요.",
+    );
+    return;
+  }
+  selectedDate.value = new Date().toISOString().split("T")[0]; // 오늘 날짜를 기본값으로
+  selectedDetail.value = null; // 신규 등록 모드
   isModalVisible.value = true;
 }
 </script>
@@ -203,5 +295,56 @@ function handleDateClick(arg) {
   color: #e67e22;
   font-size: 0.9em;
   margin: 0;
+}
+
+.view-switcher {
+  display: flex;
+  gap: 0;
+  margin-left: auto;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+}
+
+.view-switcher button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #fff;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: #495057;
+  border-left: 1px solid #dee2e6;
+}
+
+.view-switcher button:first-child {
+  border-left: none;
+}
+
+.view-switcher button.active {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.view-switcher button:not(.active):hover {
+  background-color: #f8f9fa;
+}
+
+.view-container {
+  margin-top: 1rem;
+}
+
+.both-view {
+  display: flex;
+  gap: 1rem;
+}
+
+.calendar-section {
+  flex: 1;
+}
+
+.board-section {
+  flex: 1;
+  border-left: 1px solid #ddd;
+  padding-left: 1rem;
 }
 </style>
