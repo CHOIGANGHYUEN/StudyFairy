@@ -64,27 +64,17 @@ const localModel = computed({
 // 추가된 모델 리스트
 const geminiModels = ref([
   {
-    value: "gemini-3-pro-preview",
-    name: "Gemini 3 Pro",
+    value: "gemini-1.5-pro-latest",
+    name: "Gemini 1.5 Pro",
     desc: "고성능, 복잡한 추론 및 정교한 요약에 적합",
   },
   {
-    value: "gemini-3-flash-preview",
-    name: "Gemini 3 Flash",
-    desc: "빠른 속도, 가벼운 작업에 적합",
+    value: "gemini-1.5-flash-latest",
+    name: "Gemini 1.5 Flash",
+    desc: "빠른 속도, 가벼운 작업에 적합 (권장)",
   },
   {
-    value: "gemini-2.5-pro",
-    name: "Gemini 2.5 Pro",
-    desc: "대규모 컨텍스트 및 복잡한 코드 분석",
-  },
-  {
-    value: "gemini-2.5-flash",
-    name: "Gemini 2.5 Flash",
-    desc: "가장 빠르고 효율적인 멀티모달 모델",
-  },
-  {
-    value: "gemini-1.0-pro",
+    value: "gemini-pro",
     name: "Gemini 1.0 Pro",
     desc: "안정적인 일반 텍스트 처리 모델",
   },

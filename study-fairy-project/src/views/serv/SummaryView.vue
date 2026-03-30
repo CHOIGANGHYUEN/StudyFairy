@@ -51,9 +51,8 @@ import api from "@/service/api";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
-
 // 전역 상태 관리
-const selectedModel = ref("gemini-3-flash-preview"); // 선택된 모델 상태 추가
+const selectedModel = ref("gemini-1.5-flash-latest"); // 선택된 모델 상태 추가
 const selectedFiles = ref([]);
 const toc = ref([]);
 const selectedTocItems = ref([]);
@@ -208,10 +207,14 @@ const runSummary = async () => {
         tocTitle: item.title,
       });
 
-      summaryResult.value.push({ title: item.title, content: response.data.text });
+      summaryResult.value.push({
+        title: item.title,
+        content: response.data.text,
+      });
     }
   } catch (err) {
-    const message = err.response?.data?.message || err.message || "요약 요청에 실패했습니다.";
+    const message =
+      err.response?.data?.message || err.message || "요약 요청에 실패했습니다.";
     error.value = "요약 실행 중 오류가 발생했습니다: " + message;
     console.error(err);
   } finally {

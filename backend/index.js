@@ -17,34 +17,10 @@ app.use(
 app.use(express.json()); // JSON 형태의 요청 body 파싱
 
 // 라우터 설정
-const userRoutes = require("./routes/userRoutes");
-const menuRoutes = require("./routes/menuRoutes"); // 추가
-const languageRoutes = require("./routes/languageRoutes"); // 추가
-const codeRoutes = require("./routes/codeRoutes");
-const roleRoutes = require("./routes/roleRoutes");
-const summaryRoutes = require("./routes/summaryRoutes");
-const roleMenuRoutes = require("./routes/roleMenuRoutes");
-const authRoutes = require("./routes/authRoutes");
-const userRoleRoutes = require("./routes/userRoleRoutes");
-const scheduleRoutes = require("./routes/scheduleRoutes");
-const scheduleDetailRoutes = require("./routes/scheduleDetailRoutes");
-const interactRoutes = require("./routes/interactRoutes"); // interact 라우트 추가
-const unitRoutes = require("./routes/unitRoutes");
-const { verifyToken } = require("./middleware/authMiddleware");
+const apiRoutes = require("./routes"); // 라우트 인덱스 파일 import
 
-app.use("/api/auth", authRoutes); // 인증 라우트 추가
-app.use("/api/users", verifyToken, userRoutes);
-app.use("/api/menus", verifyToken, menuRoutes);
-app.use("/api/languages", verifyToken, languageRoutes);
-app.use("/api/codes", verifyToken, codeRoutes);
-app.use("/api/roles", verifyToken, roleRoutes);
-app.use("/api/summary", verifyToken, summaryRoutes);
-app.use("/api/interact", verifyToken, interactRoutes); // interact 라우트 추가
-app.use("/api/role-menus", verifyToken, roleMenuRoutes);
-app.use("/api/user-roles", verifyToken, userRoleRoutes);
-app.use("/api/schedules", verifyToken, scheduleRoutes);
-app.use("/api/schedule-details", verifyToken, scheduleDetailRoutes);
-app.use("/api/units", verifyToken, unitRoutes);
+// 모든 API 라우트를 /api 접두사 아래에 통합
+app.use("/api", apiRoutes);
 
 // morgan 로그를 winston 스트림으로 출력
 app.use(morgan("combined", { stream: logger.stream }));

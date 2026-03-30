@@ -16,8 +16,11 @@ import MenuRoleManagementView from "@/views/sys/MenuRoleManagementView.vue";
 import RoleMainManagementView from "@/views/sys/RoleMainManagementView.vue";
 import ScheduleManagementView from "@/views/sys/ScheduleManagementView.vue";
 import ScheduleCalendarView from "@/views/sch/ScheduleCalendarView.vue";
-import UnitManagementView from "@/views/sys/UnitManagementView.vue";
 import api from "@/service/api";
+import UnitManagementView from "@/views/erp/com/UnitManagementView.vue";
+import CompanyManagementView from "@/views/erp/com/CompanyManagementView.vue";
+import MatTypeManagementView from "@/views/erp/com/MatTypeManagementView.vue";
+import MatClassManagementView from "@/views/erp/com/MatClassManagementView.vue";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
@@ -99,9 +102,24 @@ const routes = [
     component: ScheduleManagementView,
   },
   {
-    path: "/sys/units",
+    path: "/erp/com/units",
     name: "units",
     component: UnitManagementView,
+  },
+  {
+    path: "/erp/com/companies",
+    name: "companies",
+    component: CompanyManagementView,
+  },
+  {
+    path: "/erp/com/mattypes",
+    name: "mattypes",
+    component: MatTypeManagementView,
+  },
+  {
+    path: "/erp/com/matclasses",
+    name: "matclasses",
+    component: MatClassManagementView,
   },
   // src/router/index.js (또는 관련 라우터 설정 파일) 내부의 routes 배열에 추가
 
