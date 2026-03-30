@@ -1,6 +1,6 @@
 const logger = require("../config/logger");
-const userService = require("../service/userService");
-const userRoleService = require("../service/userRoleService");
+const userService = require("../src/sys/service/userService");
+const userRoleService = require("../src/sys//service/userRoleService");
 
 exports.verifyToken = async (req, res, next) => {
   // 브라우저의 사전 요청(Preflight)은 인증 검증을 생략합니다.

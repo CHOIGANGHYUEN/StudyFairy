@@ -17,7 +17,7 @@ app.use(
 app.use(express.json()); // JSON 형태의 요청 body 파싱
 
 // 라우터 설정
-const apiRoutes = require("./routes"); // 라우트 인덱스 파일 import
+const apiRoutes = require("./src/routes"); // 라우트 인덱스 파일 import
 
 // 모든 API 라우트를 /api 접두사 아래에 통합
 app.use("/api", apiRoutes);
