@@ -61,7 +61,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import api from "@/services"/api";
 
 const menus = ref([]);
 const activeMenuId = ref(null); // 1차 메뉴 호버 상태
@@ -73,7 +73,7 @@ const authStore = useAuthStore();
 const visibleMenus = computed(() => {
   const filterActive = (list) => {
     return list
-      .map(m => {
+      .map((m) => {
         // 1. 자식들을 먼저 재귀적으로 필터링
         const filteredChildren = m.children ? filterActive(m.children) : [];
         return {
@@ -81,7 +81,7 @@ const visibleMenus = computed(() => {
           children: filteredChildren,
         };
       })
-      .filter(m => {
+      .filter((m) => {
         // 2. 자신(m)이 활성이거나, 필터링된 자식이 하나라도 있으면 표시
         return m.useYn === 1 || (m.children && m.children.length > 0);
       });

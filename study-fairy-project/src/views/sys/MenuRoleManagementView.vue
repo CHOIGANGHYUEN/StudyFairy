@@ -19,307 +19,99 @@
       </template>
     </PageTitle>
 
-    <!-- Form Section -->
-    <section class="card-section">
-      <div class="card-header flex justify-between items-center">
-        <h2 class="section-title">
-          {{ isEditMode ? "매핑 정보 수정" : "새 매핑 등록" }}
-        </h2>
-        <button
-          v-if="isEditMode"
-          @click="resetForm"
-          class="text-sm font-medium text-blue-600 hover:underline"
-        >
-          취소 및 신규 전환
+    <MenuRoleForm
+      v-model="form"
+      :is-edit-mode="isEditMode"
+      :is-submitting="isSubmitting"
+      :roles="roles"
+      :menus="menus"
+      @submit="handleSubmit"
+      @reset="resetForm"
+    />
+
+    <section class="card-section search-section">
+      <div class="search-grid">
+        <div class="form-group">
+          <label for="searchRoleId">권한 ID</label>
+          <input
+            type="text"
+            id="searchRoleId"
+            v-model="searchParams.roleId"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+        <div class="form-group">
+          <label for="searchMenuId">메뉴 ID</label>
+          <input
+            type="text"
+            id="searchMenuId"
+            v-model="searchParams.menuId"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="btn-primary search-btn" @click="handleSearch">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          조회
         </button>
       </div>
-      <form @submit.prevent="handleSubmit">
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="roleId">권한 (Role) *</label>
-            <select
-              id="roleId"
-              v-model="form.roleId"
-              required
-              :disabled="isEditMode || isSubmitting"
-            >
-              <option value="" disabled>권한을 선택하세요</option>
-              <option
-                v-for="role in roles"
-                :key="role.roleId"
-                :value="role.roleId"
-              >
-                {{ role.roleId }} ({{ role.description || "설명 없음" }})
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="menuId">메뉴 (Menu) *</label>
-            <select
-              id="menuId"
-              v-model="form.menuId"
-              required
-              :disabled="isEditMode || isSubmitting"
-            >
-              <option value="" disabled>메뉴를 선택하세요</option>
-              <option
-                v-for="menu in menus"
-                :key="menu.menuId"
-                :value="menu.menuId"
-              >
-                {{ menu.menuNm }} [{{ menu.menuId }}]
-              </option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="useYn">사용 여부</label>
-            <select
-              id="useYn"
-              v-model.number="form.useYn"
-              :disabled="isSubmitting"
-            >
-              <option :value="1">사용</option>
-              <option :value="0">미사용</option>
-            </select>
-          </div>
-        </div>
-        <button
-          type="submit"
-          class="btn-primary"
-          :disabled="isSubmitting || !form.roleId || !form.menuId"
-        >
-          {{
-            isSubmitting ? "처리 중..." : isEditMode ? "수정하기" : "등록하기"
-          }}
-        </button>
-      </form>
     </section>
 
-    <!-- Table Section -->
-    <section class="card-section list-section">
-      <div class="card-header list-header">
-        <h2 class="section-title">등록된 매핑 목록</h2>
-        <span class="badge">{{ mappings.length }}건</span>
-      </div>
-      <div class="table-container">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th class="w-16">ID</th>
-              <th>권한 ID (Role)</th>
-              <th>메뉴 ID (Menu)</th>
-              <th class="w-24 text-center">상태</th>
-              <th>생성일시</th>
-              <th class="w-24 text-center">관리</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="item in mappings" :key="item.id">
-              <td>{{ item.id }}</td>
-              <td class="font-bold text-purple-700">{{ item.roleId }}</td>
-              <td class="font-bold text-blue-700">{{ item.menuId }}</td>
-              <td class="text-center">
-                <span
-                  :class="[
-                    'status-badge',
-                    item.useYn === 1 ? 'active' : 'inactive',
-                  ]"
-                >
-                  {{ item.useYn === 1 ? "사용" : "미사용" }}
-                </span>
-              </td>
-              <td>{{ formatDate(item.createdAt) }}</td>
-              <td class="text-center">
-                <div class="action-buttons">
-                  <button
-                    @click="copyMapping(item)"
-                    class="btn-icon"
-                    :disabled="isSubmitting"
-                    title="참조생성"
-                  >
-                    📄
-                  </button>
-                  <button
-                    @click="editMapping(item)"
-                    class="btn-icon"
-                    :disabled="isSubmitting"
-                    title="수정"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    @click="deleteMapping(item.id)"
-                    class="btn-icon"
-                    :disabled="isSubmitting"
-                    title="삭제"
-                  >
-                    🗑️
-                  </button>
-                </div>
-              </td>
-            </tr>
-            <tr v-if="mappings.length === 0">
-              <td colspan="6" class="empty-state">
-                등록된 매핑 정보가 없습니다.
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
+    <MenuRoleList
+      :mappings="mappings"
+      :is-submitting="isSubmitting"
+      :total-count="totalCount"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      :format-date="formatDate"
+      @copy="copyMapping"
+      @edit="editMapping"
+      @delete="deleteMapping"
+      @page-change="handlePageChange"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
-import PageTitle from "@/components/PageTitle.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
+import MenuRoleForm from "@/components/sys/menu-role/MenuRoleForm.vue";
+import MenuRoleList from "@/components/sys/menu-role/MenuRoleList.vue";
+import { useMenuRoleManagement } from "@/composables/useMenuRoleManagement";
 
-const authStore = useAuthStore();
-
-const isSubmitting = ref(false);
-const isEditMode = ref(false);
-const editTargetId = ref(null);
-
-const mappings = ref([]);
-const roles = ref([]);
-const menus = ref([]);
-
-const form = ref({
-  roleId: "",
-  menuId: "",
-  useYn: 1,
-});
-
-onMounted(async () => {
-  await fetchRoles();
-  await fetchMenus();
-  await fetchMappings();
-});
-
-const fetchRoles = async () => {
-  try {
-    const res = await api.get("/roles");
-    roles.value = res.data;
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-// 트리 형태의 메뉴를 평탄화(Flat)하여 셀렉트 박스에서 선택하기 쉽게 만듭니다.
-const fetchMenus = async () => {
-  try {
-    const res = await api.get("/menus");
-    const tree = res.data;
-    const flatList = [];
-    const traverse = (nodes, depth = 0) => {
-      for (const node of nodes) {
-        const prefix = depth > 0 ? "　".repeat(depth) + "└ " : "";
-        flatList.push({ menuId: node.menuId, menuNm: prefix + node.menuNm });
-        if (node.children && node.children.length)
-          traverse(node.children, depth + 1);
-      }
-    };
-    traverse(tree);
-    menus.value = flatList;
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const fetchMappings = async () => {
-  try {
-    const res = await api.get("/role-menus");
-    mappings.value = res.data;
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const handleSubmit = async () => {
-  isSubmitting.value = true;
-  try {
-    const url = isEditMode.value
-      ? `/role-menus/${editTargetId.value}`
-      : "/role-menus";
-    const method = isEditMode.value ? "put" : "post";
-    const payload = {
-      ...form.value,
-      createdBy: authStore.user?.id || "SYSTEM",
-      changedBy: authStore.user?.id || "SYSTEM",
-    };
-
-    await api[method](url, payload);
-
-    alert(`매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
-
-    // 연속 등록을 위해 역할(Role) 선택은 초기화하지 않고 유지
-    const currentRoleId = form.value.roleId;
-    const wasEditMode = isEditMode.value;
-
-    resetForm();
-    if (!wasEditMode) {
-      form.value.roleId = currentRoleId;
-    }
-    await fetchMappings();
-  } catch (error) {
-    const message = error.response?.data?.message || "작업 실패";
-    alert(`오류: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const copyMapping = (item) => {
-  isEditMode.value = false;
-  editTargetId.value = null;
-  form.value = {
-    roleId: item.roleId,
-    menuId: item.menuId,
-    useYn: item.useYn,
-  };
-  window.scrollTo(0, 0); // 폼 위치로 스크롤
-};
-
-const editMapping = (item) => {
-  isEditMode.value = true;
-  editTargetId.value = item.id;
-  form.value = {
-    roleId: item.roleId,
-    menuId: item.menuId,
-    useYn: item.useYn,
-  };
-  window.scrollTo(0, 0);
-};
-
-const deleteMapping = async (id) => {
-  if (!confirm("정말 이 매핑을 삭제하시겠습니까?")) return;
-  isSubmitting.value = true;
-  try {
-    await api.delete(`/role-menus/${id}`);
-    alert("삭제되었습니다.");
-    if (isEditMode.value && editTargetId.value === id) resetForm();
-    await fetchMappings();
-  } catch (error) {
-    const message = error.response?.data?.message || "삭제 실패";
-    alert(`오류: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const resetForm = () => {
-  isEditMode.value = false;
-  editTargetId.value = null;
-  form.value = { roleId: "", menuId: "", useYn: 1 };
-};
-
-const formatDate = (dateString) => {
-  if (!dateString) return "-";
-  const d = new Date(dateString);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-};
+const {
+  isSubmitting,
+  isEditMode,
+  mappings,
+  roles,
+  menus,
+  form,
+  searchParams,
+  currentPage,
+  totalPages,
+  totalCount,
+  handleSubmit,
+  copyMapping,
+  editMapping,
+  deleteMapping,
+  resetForm,
+  handleSearch,
+  handlePageChange,
+  formatDate,
+} = useMenuRoleManagement();
 </script>
 
 <style scoped>
@@ -328,57 +120,32 @@ const formatDate = (dateString) => {
   width: 1.5rem;
   height: 1.5rem;
 }
-.flex {
+.search-section {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.search-actions {
   display: flex;
-}
-.justify-between {
-  justify-content: space-between;
-}
-.items-center {
+  justify-content: flex-end;
   align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
 }
-.list-header {
+.search-btn {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
 }
-.badge {
-  background-color: #f3e8ff;
-  color: #7e22ce;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.table-container {
-  overflow-x: auto;
-}
-.data-table tr:hover td {
-  background-color: #f8fafc;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
-}
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  font-weight: 600;
-}
-.status-badge.active {
-  background-color: #dcfce7;
-  color: #166534;
-}
-.status-badge.inactive {
-  background-color: #f1f5f9;
-  color: #475569;
-}
-.text-purple-700 {
-  color: #7e22ce;
-}
-.text-blue-700 {
-  color: #1d4ed8;
+.icon-sm {
+  width: 1.2rem;
+  height: 1.2rem;
 }
 </style>

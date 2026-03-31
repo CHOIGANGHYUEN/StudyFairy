@@ -2,25 +2,25 @@ import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 import HomeView from "@/views/home/HomeView.vue";
 import LoginView from "@/views/sys/LoginView.vue";
-// ... (other imports)
-import SummaryView from "../views/serv/SummaryView.vue";
+import SummaryView from "@/views/serv/SummaryView.vue";
+import ScheduleCalendarView from "@/views/sch/ScheduleCalendarView.vue";
 import EmptyView from "@/views/EmptyView.vue";
+import MainManagementView from "@/views/sys/MainManagementView.vue";
 import UserManagementView from "@/views/sys/UserManagementView.vue";
 import MenuManagementView from "@/views/sys/MenuManagementView.vue";
 import LanguageManagementView from "@/views/sys/LanguageManagementView.vue";
-import MainManagementView from "@/views/sys/MainManagementView.vue";
 import CodeManagementView from "@/views/sys/CodeManagementView.vue";
+import RoleMainManagementView from "@/views/sys/RoleMainManagementView.vue";
 import RoleManagementView from "@/views/sys/RoleManagementView.vue";
 import UserRoleManagementView from "@/views/sys/UserRoleManagementView.vue";
 import MenuRoleManagementView from "@/views/sys/MenuRoleManagementView.vue";
-import RoleMainManagementView from "@/views/sys/RoleMainManagementView.vue";
 import ScheduleManagementView from "@/views/sys/ScheduleManagementView.vue";
-import ScheduleCalendarView from "@/views/sch/ScheduleCalendarView.vue";
-import api from "@/service/api";
 import UnitManagementView from "@/views/erp/com/UnitManagementView.vue";
 import CompanyManagementView from "@/views/erp/com/CompanyManagementView.vue";
 import MatTypeManagementView from "@/views/erp/com/MatTypeManagementView.vue";
 import MatClassManagementView from "@/views/erp/com/MatClassManagementView.vue";
+import api from "@/services";
+// ... (other imports)
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 

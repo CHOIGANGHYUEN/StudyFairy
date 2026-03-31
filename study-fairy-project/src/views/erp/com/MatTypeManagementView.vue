@@ -33,10 +33,10 @@
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
-import PageTitle from "@/components/PageTitle.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
 import MatTypeList from "@/components/erp/com/MatTypeList.vue";
 import MatTypeForm from "@/components/erp/com/MatTypeForm.vue";
-import * as matTypeService from "@/service/matTypeService";
+import * as matTypeService from "@/services/matTypeService";
 import Modal from "@/components/layout/Modal.vue";
 
 const matTypes = ref([]);

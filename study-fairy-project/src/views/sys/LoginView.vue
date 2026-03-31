@@ -45,7 +45,7 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import api from "@/services";
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -70,7 +70,10 @@ onMounted(() => {
 
               // --- [디버깅] ---
               // 백엔드에서 받은 user 객체의 실제 구조를 확인합니다.
-              console.log("백엔드에서 받은 User 객체:", JSON.stringify(user, null, 2));
+              console.log(
+                "백엔드에서 받은 User 객체:",
+                JSON.stringify(user, null, 2),
+              );
               // -----------------
 
               // 2. Auth 스토어에 사용자 정보와 토큰 저장

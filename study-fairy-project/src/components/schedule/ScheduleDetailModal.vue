@@ -310,7 +310,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from "vue";
-import api from "@/service/api";
+import api from "@/services";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const props = defineProps({

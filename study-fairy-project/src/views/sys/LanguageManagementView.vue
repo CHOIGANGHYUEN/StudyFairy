@@ -20,81 +20,111 @@
     </PageTitle>
 
     <LanguageForm :is-submitting="isSubmitting" @register="handleRegister" />
+
+    <section class="card-section search-section">
+      <div class="search-grid">
+        <div class="form-group">
+          <label for="searchLangu">언어 코드</label>
+          <input
+            type="text"
+            id="searchLangu"
+            v-model="searchParams.langu"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+        <div class="form-group">
+          <label for="searchLanguNm">언어 이름</label>
+          <input
+            type="text"
+            id="searchLanguNm"
+            v-model="searchParams.languNm"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="btn-primary search-btn" @click="handleSearch">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          조회
+        </button>
+      </div>
+    </section>
+
     <LanguageList
       :languages="languages"
       :is-submitting="isSubmitting"
+      :total-count="totalCount"
+      :current-page="currentPage"
+      :total-pages="totalPages"
       @delete="handleDelete"
+      @page-change="handlePageChange"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import api from "@/service/api";
-import { useAuthStore } from "@/stores/useAuthStore";
-import PageTitle from "@/components/PageTitle.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
 import LanguageForm from "@/components/sys/language/LanguageForm.vue";
 import LanguageList from "@/components/sys/language/LanguageList.vue";
+import { useLanguageManagement } from "@/composables/useLanguageManagement";
 
-const isSubmitting = ref(false);
-const languages = ref([]);
-const authStore = useAuthStore();
-
-onMounted(() => {
-  fetchLanguages();
-});
-
-const fetchLanguages = async () => {
-  try {
-    const response = await api.get("/languages");
-    languages.value = response.data;
-  } catch (error) {
-    console.error("언어 목록 조회 에러:", error);
-    alert("언어 목록을 불러오는 중 오류가 발생했습니다.");
-  }
-};
-
-const handleRegister = async (newLang) => {
-  isSubmitting.value = true;
-  try {
-    const registrationData = {
-      ...newLang,
-      createdBy: authStore.user?.userId || "ADMIN",
-    };
-    await api.post("/languages", registrationData);
-    alert("새로운 언어가 성공적으로 등록되었습니다.");
-    await fetchLanguages();
-  } catch (error) {
-    console.error("언어 등록 에러:", error);
-    if (error.response && error.response.status === 409) {
-      alert("이미 존재하는 언어 코드입니다. 다른 코드를 입력해주세요.");
-    } else {
-      alert("언어 등록 중 오류가 발생했습니다.");
-    }
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const handleDelete = async (id) => {
-  if (!confirm("정말로 이 언어를 삭제하시겠습니까?")) return;
-
-  isSubmitting.value = true;
-  try {
-    await api.delete(`/languages/${id}`);
-    alert("성공적으로 삭제되었습니다.");
-    await fetchLanguages();
-  } catch (error) {
-    console.error("언어 삭제 에러:", error);
-    alert("언어 삭제 중 오류가 발생했습니다.");
-  } finally {
-    isSubmitting.value = false;
-  }
-};
+const {
+  isSubmitting,
+  languages,
+  searchParams,
+  currentPage,
+  totalPages,
+  totalCount,
+  handleRegister,
+  handleDelete,
+  handleSearch,
+  handlePageChange,
+} = useLanguageManagement();
 </script>
 
 <style scoped>
 .icon {
   color: #0891b2; /* Cyan color for this page's icon */
+}
+.search-section {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+}
+.icon-sm {
+  width: 1.2rem;
+  height: 1.2rem;
 }
 </style>

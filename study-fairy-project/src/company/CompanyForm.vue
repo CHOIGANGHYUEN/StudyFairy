@@ -217,7 +217,7 @@
 
 <script setup>
 import { ref, watch, onMounted, computed } from "vue";
-import api from "@/service/api";
+import api from "@/services";
 
 const props = defineProps({
   isEditMode: Boolean,

@@ -38,8 +38,8 @@
 
       <!-- Right Column: AI Interaction Panel -->
       <AiPanel
-        v.model:selectedModel="selectedModel"
-        v.model:geminiQuestion="geminiQuestion"
+        v-model:selectedModel="selectedModel"
+        v-model:geminiQuestion="geminiQuestion"
         :available-models="availableModels"
         :selected-text="selectedText"
         :gemini-is-loading="geminiIsLoading"
@@ -62,18 +62,18 @@
 <script setup>
 import { ref, shallowRef, watch } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import api from "@/services";
 import "pdfjs-dist/web/pdf_viewer.css";
 import * as pdfjsLib from "pdfjs-dist";
 import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
 import DOMPurify from "dompurify";
 import { marked } from "marked";
 
-import PageTitle from "@/components/PageTitle.vue";
-import FileUpload from "@/components/serv/pdf/FileUpload.vue";
-import PdfViewer from "@/components/serv/pdf/PdfViewer.vue";
-import AiPanel from "@/components/serv/pdf/AiPanel.vue";
-import MarkdownModal from "@/components/serv/pdf/MarkdownModal.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
+import FileUpload from "@/components/pdf/FileUpload.vue";
+import PdfViewer from "@/components/pdf/PdfViewer.vue";
+import AiPanel from "@/components/pdf/AiPanel.vue";
+import MarkdownModal from "@/components/pdf/MarkdownModal.vue";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 

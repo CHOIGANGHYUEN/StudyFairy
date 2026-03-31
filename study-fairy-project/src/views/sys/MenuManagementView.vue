@@ -18,179 +18,136 @@
         </svg>
       </template>
     </PageTitle>
-
+    <section class="card-section search-section">
+      <div class="search-grid">
+        <div class="form-group">
+          <label for="searchMenuNm">메뉴명</label>
+          <input
+            type="text"
+            id="searchMenuNm"
+            v-model="searchParams.menuNm"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+        <div class="form-group">
+          <label for="searchLangu">언어</label>
+          <select id="searchLangu" v-model="searchParams.langu">
+            <option value="">전체</option>
+            <option
+              v-for="lang in availableLanguages"
+              :key="lang.langu"
+              :value="lang.langu"
+            >
+              {{ lang.languNm }}
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="searchUseYn">사용 여부</label>
+          <select id="searchUseYn" v-model="searchParams.useYn">
+            <option value="">전체</option>
+            <option value="1">사용</option>
+            <option value="0">미사용</option>
+          </select>
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="btn-primary search-btn" @click="handleSearch">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          조회
+        </button>
+      </div>
+    </section>
     <MenuForm
-        :is-edit-mode="isEditMode"
-        :is-submitting="isSubmitting"
-        v-model:formData="menuForm"
-        :available-languages="availableLanguages"
-        :flat-menus="flatMenus"
-        @submit="handleRegisterOrUpdate"
-        @reset="resetForm"
+      :is-edit-mode="isEditMode"
+      :is-submitting="isSubmitting"
+      v-model:formData="menuForm"
+      :available-languages="availableLanguages"
+      :flat-menus="flatMenus"
+      @submit="handleRegisterOrUpdate"
+      @reset="resetForm"
     />
 
     <MenuList
-        :paginated-menus="paginatedMenus"
-        :expanded-menus="expandedMenus"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        @toggle="toggleMenu"
-        @edit="editMenu"
-        @delete="deleteMenu"
-        @page-change="handlePageChange"
+      :menus="menuTree"
+      :expanded-menus="expandedMenus"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      @toggle="toggleMenu"
+      @edit="editMenu"
+      @delete="deleteMenu"
+      @page-change="handlePageChange"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import api from "@/service/api";
-import PageTitle from "@/components/PageTitle.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
 import MenuForm from "@/components/sys/menu/MenuForm.vue";
 import MenuList from "@/components/sys/menu/MenuList.vue";
+import { useMenuManagement } from "@/composables/useMenuManagement";
 
-const isSubmitting = ref(false);
-const isEditMode = ref(false);
-const editTargetId = ref(null);
-const menuTree = ref([]);
-const expandedMenus = ref([]);
-const availableLanguages = ref([]);
-
-const menuForm = ref({
-  langu: "KO",
-  menuId: "",
-  menuNm: "",
-  description: "",
-  parentMenuId: "",
-  path: "",
-  menuLevel: 1,
-  ordNum: 1,
-  useYn: 1,
-});
-
-// Pagination State
-const currentPage = ref(1);
-const pageSize = 10;
-const paginatedMenus = computed(() => {
-  const start = (currentPage.value - 1) * pageSize;
-  const end = start + pageSize;
-  return menuTree.value.slice(start, end);
-});
-const totalPages = computed(
-  () => Math.ceil(menuTree.value.length / pageSize) || 1,
-);
-const handlePageChange = (page) => {
-  currentPage.value = page;
-};
-
-const flatMenus = computed(() => {
-  const result = [];
-  const traverse = (nodes) => {
-    if (!nodes || !nodes.length) return;
-    for (const node of nodes) {
-      const { children, ...rest } = node;
-      result.push(rest);
-      traverse(children);
-    }
-  };
-  traverse(menuTree.value);
-  return result;
-});
-
-const toggleMenu = (id) => {
-  const idx = expandedMenus.value.indexOf(id);
-  if (idx > -1) expandedMenus.value.splice(idx, 1);
-  else expandedMenus.value.push(id);
-};
-
-const fetchLanguages = async () => {
-  try {
-    const res = await api.get("/languages");
-    availableLanguages.value = res.data;
-    if (availableLanguages.value.length > 0 && !menuForm.value.langu) {
-      menuForm.value.langu = availableLanguages.value[0].langu;
-    }
-  } catch (error) {
-    console.error("Error fetching languages:", error);
-  }
-};
-
-const fetchMenus = async () => {
-  try {
-    const res = await api.get("/menus");
-    menuTree.value = res.data;
-  } catch (error) {
-    console.error("Error fetching menus:", error);
-    menuTree.value = [];
-  }
-};
-
-const handleRegisterOrUpdate = async () => {
-  isSubmitting.value = true;
-  try {
-    const url = isEditMode.value ? `/menus/${editTargetId.value}` : "/menus";
-    const method = isEditMode.value ? "put" : "post";
-    const payload = {
-      ...menuForm.value,
-      parentMenuId: menuForm.value.parentMenuId || null,
-    };
-    await api[method](url, payload);
-    alert("완료되었습니다.");
-    resetForm();
-    await fetchMenus();
-  } catch (error) {
-    const message = error.response?.data?.message || "작업에 실패했습니다.";
-    alert(`오류: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const editMenu = (m) => {
-  isEditMode.value = true;
-  editTargetId.value = m.id;
-  menuForm.value = { ...m, parentMenuId: m.parentMenuId || "" };
-  window.scrollTo(0, 0);
-};
-
-const resetForm = () => {
-  isEditMode.value = false;
-  editTargetId.value = null;
-  menuForm.value = {
-    langu:
-      availableLanguages.value.length > 0
-        ? availableLanguages.value[0].langu
-        : "KO",
-    menuId: "",
-    menuNm: "",
-    description: "",
-    parentMenuId: "",
-    path: "",
-    menuLevel: 1,
-    ordNum: 1,
-    useYn: 1,
-  };
-};
-
-const deleteMenu = async (id) => {
-  if (!confirm("하위 메뉴까지 모두 삭제될 수 있습니다. 정말 삭제하시겠습니까?"))
-    return;
-  try {
-    await api.delete(`/menus/${id}`);
-    alert("삭제되었습니다.");
-    await fetchMenus();
-  } catch (error) {
-    const message = error.response?.data?.message || "삭제에 실패했습니다.";
-    alert(`오류: ${message}`);
-  }
-};
-
-onMounted(() => {
-  fetchLanguages();
-  fetchMenus();
-});
+// composable 함수를 호출하여 필요한 모든 것을 구조 분해 할당으로 가져옵니다.
+const {
+  isSubmitting,
+  isEditMode,
+  menuForm,
+  menuTree,
+  availableLanguages,
+  flatMenus,
+  expandedMenus,
+  currentPage,
+  totalPages,
+  searchParams,
+  handleRegisterOrUpdate,
+  resetForm,
+  toggleMenu,
+  editMenu,
+  deleteMenu,
+  handlePageChange,
+  handleSearch,
+} = useMenuManagement();
 </script>
 
 <style scoped>
-/* Page-specific styles */
+.search-section {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+}
+.icon-sm {
+  width: 1.2rem;
+  height: 1.2rem;
+}
 </style>

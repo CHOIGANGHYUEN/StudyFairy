@@ -23,7 +23,7 @@
 <script setup>
 import { ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import api from "@/service/api";
+import api from "@/services";
 
 const route = useRoute();
 const currentMenu = ref(null);

@@ -61,7 +61,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import api from "@/services";
 
 const allMenus = ref([]); // 전체 메뉴 원본
 const userMenuIds = ref(new Set()); // 사용자가 접근 가능한 menuId 목록

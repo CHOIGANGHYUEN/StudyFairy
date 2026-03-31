@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import PageTitle from "@/components/PageTitle.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
 
 const emit = defineEmits(["create"]);
 </script>

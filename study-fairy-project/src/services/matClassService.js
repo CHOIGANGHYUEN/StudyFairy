@@ -1,4 +1,4 @@
-import api from "./api";
+import api from ".";
 
 export const getMatClasses = (params = {}) =>
   api.get("/mat-classes", { params });

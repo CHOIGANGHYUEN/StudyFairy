@@ -19,7 +19,7 @@ import {
   createUnit,
   updateUnit,
   deleteUnit,
-} from "@/service/unitService";
+} from "@/services/unitService";
 import UnitToolbar from "@/components/erp/com/UnitToolbar.vue";
 import UnitList from "@/components/erp/com/UnitList.vue";
 import UnitForm from "@/components/erp/com/UnitForm.vue";

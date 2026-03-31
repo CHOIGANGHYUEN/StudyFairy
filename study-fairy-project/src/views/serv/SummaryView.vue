@@ -45,7 +45,7 @@ import PromptSection from "@/components/serv/PromptSection.vue";
 import ResultSection from "@/components/serv/ResultSection.vue";
 import TocSection from "@/components/serv/TocSection.vue";
 import FileSection from "@/components/serv/FileSection.vue";
-import api from "@/service/api";
+import api from "@/services";
 
 // 분리한 하위 컴포넌트 임포트
 

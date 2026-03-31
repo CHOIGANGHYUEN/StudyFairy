@@ -9,7 +9,7 @@
     </div>
     <div v-else class="event-list">
       <div
-        v-for="event in sortedEvents"
+        v-for="event in events"
         :key="event.id"
         class="event-item"
         @click="onEventClick(event)"
@@ -31,28 +31,35 @@
         }}</span>
       </div>
     </div>
+    <div class="pagination-wrapper" v-if="totalPages > 1">
+      <Pagination
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        @page-change="emit('page-change', $event)"
+      />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { computed } from "vue";
+import Pagination from "@/components/common/Pagination.vue";
 
-const props = defineProps({
+defineProps({
   events: {
     type: Array,
     required: true,
   },
+  currentPage: {
+    type: Number,
+    default: 1,
+  },
+  totalPages: {
+    type: Number,
+    default: 1,
+  },
 });
 
-const emit = defineEmits(["event-click", "new-post"]);
-
-const sortedEvents = computed(() => {
-  return [...props.events].sort((a, b) => {
-    const dateA = new Date(a.start);
-    const dateB = new Date(b.start);
-    return dateB - dateA; // 최신 날짜가 위로 오도록 변경
-  });
-});
+const emit = defineEmits(["event-click", "new-post", "page-change"]);
 
 function formatDate(dateStr) {
   if (!dateStr) return "";
@@ -233,5 +240,11 @@ function onNewPostClick() {
 .event-status.upcoming {
   background-color: #ffc107;
   color: #212529;
+}
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5rem;
 }
 </style>

@@ -20,125 +20,122 @@
     </PageTitle>
 
     <RoleForm
-        :is-edit-mode="isEditMode"
-        :is-submitting="isSubmitting"
-        v-model:formData="form"
-        @submit="handleSubmit"
-        @reset="resetForm"
+      :is-edit-mode="isEditMode"
+      :is-submitting="isSubmitting"
+      v-model:formData="form"
+      @submit="handleSubmit"
+      @reset="resetForm"
     />
 
+    <section class="card-section search-section">
+      <div class="search-grid">
+        <div class="form-group">
+          <label for="searchRoleId">권한 ID</label>
+          <input
+            type="text"
+            id="searchRoleId"
+            v-model="searchParams.roleId"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+        <div class="form-group">
+          <label for="searchDescription">설명</label>
+          <input
+            type="text"
+            id="searchDescription"
+            v-model="searchParams.description"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+      </div>
+      <div class="search-actions">
+        <button class="btn-primary search-btn" @click="handleSearch">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          조회
+        </button>
+      </div>
+    </section>
+
     <RoleList
-        :roles="roles"
-        :is-submitting="isSubmitting"
-        @edit="editRole"
-        @delete="deleteRole"
+      :roles="roles"
+      :is-submitting="isSubmitting"
+      :total-count="totalCount"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      @edit="editRole"
+      @delete="deleteRole"
+      @page-change="handlePageChange"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
-import PageTitle from "@/components/PageTitle.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
 import RoleForm from "@/components/sys/role/RoleForm.vue";
 import RoleList from "@/components/sys/role/RoleList.vue";
+import { useRoleManagement } from "@/composables/useRoleManagement";
 
-const isSubmitting = ref(false);
-const isEditMode = ref(false);
-const editTargetId = ref(null);
-const roles = ref([]);
-
-const authStore = useAuthStore();
-
-const form = ref({
-  roleId: "",
-  description: "",
-  useYn: 1,
-});
-
-onMounted(() => {
-  fetchRoles();
-});
-
-const fetchRoles = async () => {
-  try {
-    const response = await api.get("/roles");
-    roles.value = response.data;
-  } catch (error) {
-    console.error("권한 목록 조회 에러:", error);
-  }
-};
-
-const handleSubmit = async () => {
-  if (!form.value.roleId) return;
-  isSubmitting.value = true;
-  try {
-    const url = isEditMode.value ? `/roles/${editTargetId.value}` : "/roles";
-    const method = isEditMode.value ? "put" : "post";
-    const payload = {
-      roleId: form.value.roleId,
-      description: form.value.description,
-      useYn: form.value.useYn,
-      createdBy: authStore.user?.userid || "SYSTEM",
-      changedBy: authStore.user?.userid || "SYSTEM",
-    };
-
-    await api[method](url, payload);
-
-    alert(`권한이 성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
-    resetForm();
-    await fetchRoles(); // 목록 새로고침
-  } catch (error) {
-    const message = error.response?.data?.message || "작업에 실패했습니다.";
-    alert(`오류: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const editRole = (role) => {
-  isEditMode.value = true;
-  editTargetId.value = role.id;
-  form.value = {
-    roleId: role.roleId,
-    description: role.description,
-    useYn: role.useYn,
-  };
-  window.scrollTo(0, 0);
-};
-
-const deleteRole = async (id) => {
-  if (!confirm("정말로 이 권한을 삭제하시겠습니까?")) return;
-  isSubmitting.value = true;
-  try {
-    await api.delete(`/roles/${id}`);
-    alert("성공적으로 삭제되었습니다.");
-    if (isEditMode.value && editTargetId.value === id) {
-      resetForm();
-    }
-    await fetchRoles(); // 데이터 최신화
-  } catch (error) {
-    const message = error.response?.data?.message || "삭제에 실패했습니다.";
-    alert(`오류: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const resetForm = () => {
-  isEditMode.value = false;
-  editTargetId.value = null;
-  form.value = {
-    roleId: "",
-    description: "",
-    useYn: 1,
-  };
-};
+const {
+  isSubmitting,
+  isEditMode,
+  roles,
+  form,
+  searchParams,
+  currentPage,
+  totalPages,
+  totalCount,
+  handleSubmit,
+  editRole,
+  deleteRole,
+  resetForm,
+  handleSearch,
+  handlePageChange,
+} = useRoleManagement();
 </script>
 
 <style scoped>
 .icon {
   color: #8b5cf6;
+}
+.search-section {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+}
+.icon-sm {
+  width: 1.2rem;
+  height: 1.2rem;
 }
 </style>

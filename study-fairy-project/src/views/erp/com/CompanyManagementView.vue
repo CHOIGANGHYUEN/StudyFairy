@@ -20,13 +20,11 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
+import api from "@/services";
+import CompanyList from "@/company/CompanyList.vue";
+import CompanyForm from "@/company/CompanyForm.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import * as companyService from "@/service/companyService";
-import api from "@/service/api";
-import PageTitle from "@/components/PageTitle.vue";
-import CompanyForm from "@/components/sys/company/CompanyForm.vue";
-import CompanyList from "@/components/sys/company/CompanyList.vue";
-
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
 const editTargetId = ref(null);
@@ -34,6 +32,27 @@ const companies = ref([]);
 const languages = ref([]);
 
 const authStore = useAuthStore();
+
+const searchParams = ref({
+  repNm: "",
+  regNo: "",
+});
+
+const pagination = ref({
+  currentPage: 1,
+  totalPages: 1,
+  totalItems: 0,
+});
+
+const handleSearch = () => {
+  pagination.value.currentPage = 1;
+  fetchCompanies();
+};
+
+const handlePageChange = (page) => {
+  pagination.value.currentPage = page;
+  fetchCompanies();
+};
 
 const getInitialForm = () => ({
   companyId: "",
@@ -71,8 +90,22 @@ const fetchLanguages = async () => {
 
 const fetchCompanies = async () => {
   try {
-    const response = await companyService.getCompanies();
-    companies.value = response.data;
+    const response = await api.get("/companies", {
+      params: {
+        page: pagination.value.currentPage,
+        size: 10,
+        repNm: searchParams.value.repNm || undefined,
+        regNo: searchParams.value.regNo || undefined,
+      },
+    });
+    if (response.data && response.data.content) {
+      companies.value = response.data.content;
+      pagination.value.totalPages = response.data.totalPages || 1;
+      pagination.value.totalItems = response.data.totalElements || 0;
+    } else {
+      companies.value = response.data || [];
+      pagination.value.totalPages = 1;
+    }
   } catch (error) {
     console.error("Failed to fetch companies:", error);
     alert("회사 목록을 불러오는 데 실패했습니다.");
@@ -86,10 +119,10 @@ const handleSubmit = async () => {
     const payload = { ...form.value };
     if (isEditMode.value) {
       payload.changedBy = authStore.user?.userid || "SYSTEM";
-      await companyService.updateCompany(editTargetId.value, payload);
+      await api.put(`/companies/${editTargetId.value}`, payload);
     } else {
       payload.createdBy = authStore.user?.userid || "SYSTEM";
-      await companyService.createCompany(payload);
+      await api.post("/companies", payload);
     }
     alert(`성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
     resetForm();
@@ -118,7 +151,7 @@ const handleDelete = async (id) => {
     return;
   isSubmitting.value = true;
   try {
-    await companyService.deleteCompany(id);
+    await api.delete(`/companies/${id}`);
     alert("성공적으로 삭제되었습니다.");
     if (isEditMode.value && editTargetId.value === id) {
       resetForm();
@@ -140,5 +173,48 @@ const resetForm = () => {
 </script>
 
 <style scoped>
-/* Page-specific layout styles can remain here */
+.company-management-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+.left-panel,
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.search-section {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+}
+.search-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+}
+.icon-sm {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+@media (max-width: 1024px) {
+  .company-management-layout {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

@@ -2,7 +2,7 @@
   <section class="card-section list-section">
     <div class="card-header list-header">
       <h2 class="section-title">지원 언어 목록</h2>
-      <span class="badge">{{ languages.length }}개 언어</span>
+      <span class="badge">{{ totalCount }}개 언어</span>
     </div>
 
     <div class="table-container">
@@ -46,16 +46,28 @@
         </tbody>
       </table>
     </div>
+    <div class="pagination-wrapper" v-if="totalPages > 1">
+      <Pagination
+        :current-page="currentPage"
+        :total-pages="totalPages"
+        @page-change="emit('pageChange', $event)"
+      />
+    </div>
   </section>
 </template>
 
 <script setup>
+import Pagination from "@/components/common/Pagination.vue";
+
 defineProps({
   languages: Array,
   isSubmitting: Boolean,
+  totalCount: Number,
+  currentPage: Number,
+  totalPages: Number,
 });
 
-const emit = defineEmits(["delete"]);
+const emit = defineEmits(["delete", "pageChange"]);
 
 const formatDate = (date) => {
   if (!date) return "-";
@@ -103,5 +115,11 @@ const formatDate = (date) => {
   text-align: center;
   padding: 3rem !important;
   color: #94a3b8;
+}
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5rem;
 }
 </style>

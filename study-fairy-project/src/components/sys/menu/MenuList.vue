@@ -13,7 +13,7 @@
           </tr>
         </thead>
         <tbody>
-          <template v-for="l1 in paginatedMenus" :key="l1.id">
+          <template v-for="l1 in menus" :key="l1.id">
             <tr class="row-l1">
               <td class="text-center">
                 <button
@@ -125,18 +125,18 @@
               </template>
             </template>
           </template>
-           <tr v-if="paginatedMenus.length === 0">
-              <td colspan="6" class="empty-state">
-                등록된 메뉴 정보가 없습니다.
-              </td>
-            </tr>
+          <tr v-if="menus.length === 0">
+            <td colspan="6" class="empty-state">
+              등록된 메뉴 정보가 없습니다.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
 
     <div
       class="pagination-wrapper"
-      v-if="totalPages > 0 && paginatedMenus.length > 0"
+      v-if="totalPages > 0 && menus.length > 0"
     >
       <Pagination
         :current-page="currentPage"
@@ -148,16 +148,16 @@
 </template>
 
 <script setup>
-import Pagination from "@/components/Pagination.vue";
+import Pagination from "@/components/common/Pagination.vue";
 
 defineProps({
-    paginatedMenus: Array,
-    expandedMenus: Array,
-    currentPage: Number,
-    totalPages: Number,
+  menus: Array,
+  expandedMenus: Array,
+  currentPage: Number,
+  totalPages: Number,
 });
 
-const emit = defineEmits(['toggle', 'edit', 'delete', 'page-change']);
+const emit = defineEmits(["toggle", "edit", "delete", "page-change"]);
 </script>
 
 <style scoped>

@@ -62,10 +62,10 @@
 </template>
 
 <script setup>
-import PageTitle from "@/components/PageTitle.vue";
+import PageTitle from "@/components/common/PageTitle.vue";
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import api from "@/services";
 
 const authStore = useAuthStore();
 const allowedPaths = ref(new Set());

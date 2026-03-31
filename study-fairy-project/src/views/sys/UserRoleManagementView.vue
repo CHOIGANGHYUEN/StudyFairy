@@ -25,7 +25,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import api from "@/services";
 import UserRoleForm from "@/components/sys/userRole/UserRoleForm.vue";
 import UserRoleList from "@/components/sys/userRole/UserRoleList.vue";
 
@@ -113,7 +113,7 @@ const handleSubmit = async () => {
     await api[method](url, payload);
 
     alert(
-      `사용자-권한 매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`
+      `사용자-권한 매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`,
     );
     resetForm();
     await fetchMappings(currentPage.value);
