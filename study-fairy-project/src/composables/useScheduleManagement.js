@@ -51,15 +51,15 @@ export function useScheduleManagement() {
 
   const fetchCodes = async () => {
     try {
-      // Category SYS 아래에 Group SYS001, SYS002가 존재한다고 가정하여 API 호출
       const [res1, res2] = await Promise.all([
-        api.get("/codes/items/SYS/SYS001").catch(() => ({ data: [] })),
-        api.get("/codes/items/SYS/SYS002").catch(() => ({ data: [] })),
+        api.get("/codes/items/SYS/SYS001"),
+        api.get("/codes/items/SYS/SYS002"),
       ]);
-      sys001Items.value = res1.data;
-      sys002Items.value = res2.data;
+      sys001Items.value = res1.data.data || [];
+      sys002Items.value = res2.data.data || [];
     } catch (error) {
       console.error("공통 코드 조회 실패:", error);
+      alert("일정 그룹 및 코드 조회에 실패했습니다. 페이지를 새로고침해보세요.");
     }
   };
 
@@ -69,44 +69,17 @@ export function useScheduleManagement() {
         params: {
           page: page,
           limit: pageSize,
-          ...(searchParams.value.schGroupCode && {
-            schGroupCode: searchParams.value.schGroupCode,
-          }),
-          ...(searchParams.value.userId && {
-            userId: searchParams.value.userId,
-          }),
-          ...(searchParams.value.schYear && {
-            schYear: searchParams.value.schYear,
-          }),
-          ...(searchParams.value.schMonth && {
-            schMonth: searchParams.value.schMonth,
-          }),
-          ...(searchParams.value.schDate && {
-            schDate: searchParams.value.schDate,
-          }),
+          ...searchParams.value,
         },
       });
 
-      // 백엔드 응답이 페이징 객체인지 단순 배열인지 확인하여 분기 처리 (조회 안 되는 버그 수정)
-      if (res.data && res.data.data) {
-        schedules.value = res.data.data;
-        totalPages.value = res.data.totalPages || 1;
-        totalCount.value = res.data.totalCount || res.data.data.length;
-      } else if (Array.isArray(res.data)) {
-        // 배열 전체가 반환될 경우 프론트엔드에서 페이징(slice) 처리
-        const allData = res.data;
-        totalCount.value = allData.length;
-        totalPages.value = Math.ceil(allData.length / pageSize) || 1;
-        schedules.value = allData.slice((page - 1) * pageSize, page * pageSize);
-      } else {
-        schedules.value = [];
-        totalPages.value = 1;
-        totalCount.value = 0;
-      }
-
+      schedules.value = res.data.data || [];
+      totalPages.value = res.data.totalPages || 1;
+      totalCount.value = res.data.totalCount || 0;
       currentPage.value = page;
     } catch (error) {
       console.error("일정 목록 조회 실패:", error);
+      alert("일정 목록 조회에 실패했습니다.");
       schedules.value = [];
       totalPages.value = 1;
       totalCount.value = 0;
@@ -115,13 +88,11 @@ export function useScheduleManagement() {
 
   const fetchMinMaxDates = async () => {
     try {
-      // 년도, 월, 일 필터를 무시하고 오직 그룹코드와 사용자ID만으로 전체 일정의 최소/최대 값을 구함
       const params = {};
       if (searchParams.value.schGroupCode)
         params.schGroupCode = searchParams.value.schGroupCode;
       if (searchParams.value.userId) params.userId = searchParams.value.userId;
 
-      // 백엔드 집계 API 호출
       const res = await api.get("/schedules/min-max", { params });
       const { minSchDate: minD, maxSchDate: maxD } = res.data;
 
@@ -166,7 +137,7 @@ export function useScheduleManagement() {
         for (let day = 1; day <= daysInMonth; day++) {
           const dateStr = `${year}-${String(month).padStart(
             2,
-            "0",
+            "0"
           )}-${String(day).padStart(2, "0")}`;
           bulkPayload.push({
             ...form.value,
@@ -184,7 +155,7 @@ export function useScheduleManagement() {
 
       resetForm();
       await fetchSchedules();
-      await fetchMinMaxDates(); // 일괄 등록/수정 후 최소/최대 일자 갱신
+      await fetchMinMaxDates();
     } catch (error) {
       const message = error.response?.data?.message || "작업 실패";
       alert(`오류: ${message}`);
@@ -202,7 +173,7 @@ export function useScheduleManagement() {
       schYear: item.schYear || String(currentYear),
       schMonth:
         item.schMonth || String(new Date().getMonth() + 1).padStart(2, "0"),
-      schDate: formatDateOnly(item.schDate), // YYYY-MM-DD 형식으로 바인딩
+      schDate: formatDateOnly(item.schDate),
       schCode: item.schCode || "",
       useYn: item.useYn,
     };
@@ -210,19 +181,14 @@ export function useScheduleManagement() {
   };
 
   const deleteSchedule = async (id) => {
-    if (
-      !confirm(
-        "정말 이 일정을 삭제하시겠습니까? 연관된 세부 일정도 모두 삭제됩니다.",
-      )
-    )
-      return;
+    if (!confirm("정말 이 일정을 삭제하시겠습니까?")) return;
     isSubmitting.value = true;
     try {
       await api.delete(`/schedules/${id}`);
       alert("삭제되었습니다.");
       if (isEditMode.value && editTargetId.value === id) resetForm();
       await fetchSchedules();
-      await fetchMinMaxDates(); // 삭제 후 갱신
+      await fetchMinMaxDates();
     } catch (error) {
       const message = error.response?.data?.message || "삭제 실패";
       alert(`오류: ${message}`);
@@ -250,7 +216,7 @@ export function useScheduleManagement() {
     const d = new Date(dateString);
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
       2,
-      "0",
+      "0"
     )}-${String(d.getDate()).padStart(2, "0")}`;
   };
 
