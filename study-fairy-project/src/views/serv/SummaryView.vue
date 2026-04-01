@@ -3,288 +3,145 @@
     <h1>문서 요약 서비스</h1>
     <p v-if="error" style="color: red">오류: {{ error }}</p>
 
+    <!-- 0. AI 모델 선택 영역 -->
+    <section class="section-box">
+      <h2>0. AI 모델 선택</h2>
+      <select v-model="selectedModel" :disabled="isLoading" class="form-select">
+        <option value="gemini-1.5-flash-latest">Gemini 1.5 Flash</option>
+        <option value="gemini-1.5-pro-latest">Gemini 1.5 Pro</option>
+      </select>
+    </section>
+
     <!-- 1. 파일 선택 영역 -->
-    <FileSection
-      v-model:selectedFiles="selectedFiles"
-      :isLoading="isLoading"
-      @open-drive="openGoogleDrivePicker"
-    />
+    <section class="section-box">
+      <h2>1. 파일 선택</h2>
+      <div class="button-group">
+        <input type="file" multiple @change="handleFileChange" :disabled="isLoading" />
+        <button @click="openGoogleDrivePicker" :disabled="isLoading" class="btn btn-export">
+          구글 드라이브 열기
+        </button>
+      </div>
+      <ul v-if="selectedFiles.length > 0" class="item-list">
+        <li v-for="(file, idx) in selectedFiles" :key="idx">{{ file.name }}</li>
+      </ul>
+    </section>
 
     <!-- 2. 목차 직접 입력 및 선택 영역 -->
-    <TocSection
-      v-model:toc="toc"
-      v-model:selectedTocItems="selectedTocItems"
-      :isLoading="isLoading"
-    />
+    <section class="section-box">
+      <h2>2. 목차 선택</h2>
+      <div class="button-group">
+        <input v-model="newTocTitle" @keyup.enter="addToc" placeholder="목차를 입력하세요" :disabled="isLoading" class="form-input" />
+        <button @click="addToc" :disabled="isLoading" class="btn btn-preview">추가</button>
+      </div>
+      <ul v-if="toc.length > 0" class="item-list">
+        <li v-for="(item, idx) in toc" :key="idx">
+          <label>
+            <input type="checkbox" :value="item" v-model="selectedTocItems" :disabled="isLoading" />
+            {{ item.title }}
+          </label>
+        </li>
+      </ul>
+    </section>
 
-    <!-- 3. 프롬프트 입력 영역 -->
-    <PromptSection v-model="summaryPrompt" :isLoading="isLoading" />
-    <!-- 0. AI 모델 선택 영역 (추가됨) -->
-    <ModelSection v-model="selectedModel" :isLoading="isLoading" />
+    <!-- 3. 요약 프롬프트 영역 -->
+    <section class="section-box">
+      <h2>3. 요약 프롬프트</h2>
+      <textarea v-model="summaryPrompt" placeholder="요약 프롬프트를 입력하세요." :disabled="isLoading" class="prompt-textarea"></textarea>
+    </section>
 
-    <!-- 4, 5. 실행 및 결과 영역 -->
-    <ResultSection
-      :results="summaryResult"
-      :isLoading="isLoading"
-      :summaryLoading="summaryLoading"
-      :disabled="selectedTocItems.length === 0"
-      @run="runSummary"
-      @export="exportToGoogleDocs"
-    />
+    <!-- 4. 요약 실행 영역 -->
+    <section class="run-section section-box">
+      <h2>4. 요약 실행</h2>
+      <button @click="runSummary" :disabled="selectedTocItems.length === 0 || isLoading" class="btn-run">
+        <span v-if="isLoading && summaryLoading">요약 진행 중...</span>
+        <span v-else>요약 실행 (RUN)</span>
+      </button>
+    </section>
+
+    <!-- 5. 요약 결과 목록 -->
+    <section v-if="summaryResult && summaryResult.length > 0" class="result-list-section section-box">
+      <div class="result-header-main">
+        <h2>5. 요약 결과</h2>
+        <span class="badge">총 {{ summaryResult.length }}개 완료</span>
+      </div>
+
+      <ul class="result-list">
+        <li v-for="(item, index) in paginatedResults" :key="index" class="result-item">
+          <div class="result-item-header">
+            <h3>{{ item.title }}</h3>
+            <div class="button-group">
+              <button @click="togglePreview(index)" class="btn btn-preview">
+                {{ previewIndex === index ? "미리보기 닫기" : "미리보기" }}
+              </button>
+              <button @click="downloadResult(item)" class="btn btn-download">Markdown 다운로드</button>
+              <button @click="exportToGoogleDocs(item)" class="btn btn-export">구글 독스</button>
+            </div>
+          </div>
+
+          <transition name="fade">
+            <div v-if="previewIndex === index" class="result-content-preview">
+              <div v-html="sanitizedHTML(item.content)"></div>
+            </div>
+          </transition>
+        </li>
+      </ul>
+
+      <!-- 페이징 컨트롤 -->
+      <div v-if="totalPages > 1" class="pagination">
+        <button @click="prevPage" :disabled="currentPage === 1" class="btn-page">이전</button>
+        <span class="page-info">{{ currentPage }} / {{ totalPages }}</span>
+        <button @click="nextPage" :disabled="currentPage === totalPages" class="btn-page">다음</button>
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useAuthStore } from "@/stores/useAuthStore";
-import { useRouter } from "vue-router";
-import * as pdfjsLib from "pdfjs-dist";
-import pdfWorker from "pdfjs-dist/build/pdf.worker.mjs?url";
-import ModelSection from "@/components/serv/ModelSection.vue";
-import PromptSection from "@/components/serv/PromptSection.vue";
-import ResultSection from "@/components/serv/ResultSection.vue";
-import TocSection from "@/components/serv/TocSection.vue";
-import FileSection from "@/components/serv/FileSection.vue";
-import api from "@/services";
-
-// 분리한 하위 컴포넌트 임포트
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
-
-// 전역 상태 관리
-const selectedModel = ref("gemini-1.5-flash-latest"); // 선택된 모델 상태 추가
-const selectedFiles = ref([]);
-const toc = ref([]);
-const selectedTocItems = ref([]);
-const summaryPrompt = ref("다음 내용을 요약해줘:");
-const summaryResult = ref([]);
-const allContent = ref("");
-
-// 로딩 및 에러 상태
-const isLoading = ref(false);
-const summaryLoading = ref(false);
-const error = ref(null);
-
-const authStore = useAuthStore();
-const router = useRouter();
-
-// --- 구글 드라이브 파일 픽커 로직 ---
-const openGoogleDrivePicker = () => {
-  const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-  if (!apiKey) {
-    alert(
-      "Google Picker API 키가 필요합니다. .env 파일에 VITE_GOOGLE_API_KEY를 추가해주세요.",
-    );
-    return;
-  }
-  if (!authStore.accessToken) {
-    alert("구글 계정 로그인이 필요합니다.");
-    router.push("/login");
-    return;
-  }
-
-  const initPicker = () => {
-    window.gapi.load("picker", () => {
-      const picker = new window.google.picker.PickerBuilder()
-        .addView(window.google.picker.ViewId.DOCS)
-        .setOAuthToken(authStore.accessToken)
-        .setDeveloperKey(apiKey)
-        .setCallback(pickerCallback)
-        .build();
-      picker.setVisible(true);
-    });
-  };
-
-  if (window.gapi) {
-    initPicker();
-  } else {
-    const script = document.createElement("script");
-    script.src = "https://apis.google.com/js/api.js";
-    script.async = true;
-    script.defer = true;
-    script.onload = initPicker;
-    script.onerror = () =>
-      alert("Google Picker API 스크립트 로드에 실패했습니다.");
-    document.head.appendChild(script);
-  }
-};
-
-const pickerCallback = (data) => {
-  if (data.action === google.picker.Action.PICKED) {
-    const newFiles = data.docs.map((doc) => ({
-      id: doc.id,
-      name: doc.name,
-      mimeType: doc.mimeType,
-      isGoogleDrive: true,
-    }));
-    selectedFiles.value = [...selectedFiles.value, ...newFiles];
-  }
-};
-
-// --- 파일 파싱 로직 ---
-const readFileContent = async () => {
-  let combinedContent = "";
-  for (const file of selectedFiles.value) {
-    if (file.isGoogleDrive) {
-      if (file.mimeType === "application/vnd.google-apps.document") {
-        const response = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${file.id}/export?mimeType=text/plain`,
-          { headers: { Authorization: `Bearer ${authStore.accessToken}` } },
-        );
-        if (!response.ok) {
-          throw new Error(
-            `Google Drive 파일 내용을 가져오는 데 실패했습니다. Status: ${response.status}`,
-          );
-        }
-        combinedContent += (await response.text()) + "\n\n";
-      } else if (file.mimeType === "application/pdf") {
-        const response = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`,
-          { headers: { Authorization: `Bearer ${authStore.accessToken}` } },
-        );
-        if (!response.ok)
-          throw new Error(`Failed to fetch PDF file: ${response.statusText}`);
-
-        const pdfData = await response.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument(pdfData).promise;
-        let pdfText = "";
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const textContent = await page.getTextContent();
-          pdfText += textContent.items.map((s) => s.str).join(" ");
-        }
-        combinedContent += pdfText + "\n\n";
-      } else {
-        throw new Error(
-          `'${file.name}' 파일은 지원되지 않는 형식입니다. Google Docs와 PDF 파일만 지원됩니다.`,
-        );
-      }
-    } else {
-      const content = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = (e) => reject(e);
-        reader.readAsText(file);
-      });
-      combinedContent += content + "\n\n";
-    }
-  }
-  allContent.value = combinedContent;
-};
-
-// --- 요약 실행 로직 ---
-const runSummary = async () => {
-  if (selectedFiles.value.length === 0) {
-    alert("요약할 파일을 먼저 선택해주세요.");
-    return;
-  }
-  if (selectedTocItems.value.length === 0) {
-    alert("요약할 목차를 선택해주세요.");
-    return;
-  }
-
-  isLoading.value = true;
-  summaryLoading.value = true;
-  error.value = null;
-  summaryResult.value = [];
-
-  try {
-    // 요약을 시작할 때 파일 내용을 파싱합니다.
-    await readFileContent();
-
-    if (!allContent.value) {
-      alert("파일 내용이 비어있습니다.");
-      isLoading.value = false;
-      summaryLoading.value = false;
-      return;
-    }
-
-    for (const item of selectedTocItems.value) {
-      const response = await api.post("/summary", {
-        model: selectedModel.value,
-        prompt: summaryPrompt.value,
-        content: allContent.value,
-        tocTitle: item.title,
-      });
-
-      summaryResult.value.push({
-        title: item.title,
-        content: response.data.text,
-      });
-    }
-  } catch (err) {
-    const message =
-      err.response?.data?.message || err.message || "요약 요청에 실패했습니다.";
-    error.value = "요약 실행 중 오류가 발생했습니다: " + message;
-    console.error(err);
-  } finally {
-    isLoading.value = false;
-    summaryLoading.value = false;
-  }
-};
-
-// --- 구글 독스 내보내기 로직 ---
-const exportToGoogleDocs = async (item) => {
-  if (!item || !item.content) {
-    alert("내보낼 요약 결과가 없습니다.");
-    return;
-  }
-
-  const loadDocsApi = async () => {
-    if (!window.gapi) {
-      await new Promise((resolve, reject) => {
-        const script = document.createElement("script");
-        script.src = "https://apis.google.com/js/api.js";
-        script.onload = resolve;
-        script.onerror = () => reject(new Error("Google API 로드 실패"));
-        document.head.appendChild(script);
-      });
-    }
-    if (!window.gapi.client) {
-      await new Promise((resolve) => window.gapi.load("client", resolve));
-    }
-    if (!window.gapi.client.docs) {
-      await window.gapi.client.load(
-        "https://docs.googleapis.com/$discovery/rest?version=v1",
-      );
-    }
-  };
-
-  try {
-    await loadDocsApi();
-
-    const createResponse = await gapi.client.docs.documents.create({
-      title: item.title || "요약된 문서",
-    });
-
-    const documentId = createResponse.result.documentId;
-
-    // Markdown 콘텐츠를 준비합니다.
-    const markdownContent = `# ${item.title}\n\n${item.content}`;
-
-    await gapi.client.docs.documents.batchUpdate({
-      documentId,
-      requests: [
-        {
-          insertText: {
-            text: markdownContent,
-            location: { index: 1 },
-          },
-        },
-      ],
-    });
-
-    const docUrl = `https://docs.google.com/document/d/${documentId}/edit`;
-    alert(`문서가 성공적으로 생성되었습니다! 링크: ${docUrl}`);
-  } catch (err) {
-    error.value =
-      "Google Docs 내보내기 중 오류 발생: " +
-      (err.result?.error?.message || err.message);
-    console.error(err);
-  }
-};
+import { useSummary } from "@/composables/useSummary";
+const {
+  selectedModel, selectedFiles, toc, selectedTocItems, summaryPrompt, summaryResult,
+  isLoading, summaryLoading, error, newTocTitle,
+  handleFileChange, openGoogleDrivePicker, addToc, runSummary, exportToGoogleDocs,
+  currentPage, totalPages, paginatedResults, previewIndex, prevPage, nextPage, togglePreview,
+  sanitizedHTML, downloadResult
+} = useSummary();
 </script>
 
 <style scoped>
-/* Container style is now handled by the global .admin-container class */
+.section-box {
+  margin-bottom: 2rem; padding: 1.5rem; border: 1px solid #e2e8f0;
+  border-radius: 0.75rem; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.section-box h2 { margin-top: 0; font-size: 1.25rem; color: #1e293b; margin-bottom: 1rem; }
+.prompt-textarea { width: 100%; height: 100px; resize: vertical; padding: 0.75rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; }
+.form-select, .form-input { padding: 0.5rem; border: 1px solid #cbd5e1; border-radius: 0.375rem; font-size: 1rem; }
+.form-input { width: 250px; }
+.item-list { margin-top: 1rem; padding-left: 1.5rem; }
+.button-group { display: flex; gap: 0.5rem; }
+.run-section { text-align: center; }
+.btn-run { padding: 0.75rem 2rem; font-size: 1.1rem; font-weight: bold; background-color: #3b82f6; color: white; border: none; border-radius: 0.5rem; cursor: pointer; transition: background-color 0.2s; }
+.btn-run:hover:not(:disabled) { background-color: #2563eb; }
+.btn-run:disabled { background-color: #94a3b8; cursor: not-allowed; }
+.result-header-main { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+.result-header-main h2 { margin: 0; }
+.badge { background-color: #eff6ff; color: #2563eb; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; font-weight: 600; }
+.result-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1rem; }
+.result-item { border: 1px solid #cbd5e1; border-radius: 0.5rem; background-color: #f8fafc; overflow: hidden; }
+.result-item-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background-color: #ffffff; border-bottom: 1px solid #e2e8f0; }
+.result-item-header h3 { margin: 0; font-size: 1.1rem; color: #1e293b; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.btn { padding: 0.5rem 0.75rem; font-size: 0.85rem; font-weight: 600; border: none; border-radius: 0.375rem; cursor: pointer; transition: all 0.2s; }
+.btn-preview { background-color: #f1f5f9; color: #475569; }
+.btn-preview:hover { background-color: #e2e8f0; }
+.btn-download { background-color: #10b981; color: white; }
+.btn-download:hover { background-color: #059669; }
+.btn-export { background-color: #f59e0b; color: white; }
+.btn-export:hover { background-color: #d97706; }
+.result-content-preview { padding: 1.5rem; background-color: #f8fafc; border-top: 1px solid #e2e8f0; font-size: 0.95rem; line-height: 1.6; color: #334155; }
+.pagination { display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 2rem; }
+.btn-page { padding: 0.5rem 1rem; background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.375rem; cursor: pointer; }
+.btn-page:hover:not(:disabled) { background-color: #f1f5f9; }
+.btn-page:disabled { opacity: 0.5; cursor: not-allowed; }
+.page-info { font-weight: bold; color: #475569; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

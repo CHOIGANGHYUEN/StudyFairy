@@ -21,8 +21,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import api from "@/services";
-import CompanyList from "@/company/CompanyList.vue";
-import CompanyForm from "@/company/CompanyForm.vue";
+import CompanyList from "@/components/company/CompanyList.vue";
+import CompanyForm from "@/components/company/CompanyForm.vue";
 import PageTitle from "@/components/common/PageTitle.vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 const isSubmitting = ref(false);
