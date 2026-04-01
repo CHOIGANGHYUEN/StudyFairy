@@ -30,8 +30,12 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import api from "@/service/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import {
+  getLanguages,
+  createLanguage,
+  deleteLanguage,
+} from "@/service/languageService";
 import PageTitle from "@/components/PageTitle.vue";
 import LanguageForm from "@/components/sys/language/LanguageForm.vue";
 import LanguageList from "@/components/sys/language/LanguageList.vue";
@@ -46,7 +50,7 @@ onMounted(() => {
 
 const fetchLanguages = async () => {
   try {
-    const response = await api.get("/languages");
+    const response = await getLanguages();
     languages.value = response.data;
   } catch (error) {
     console.error("언어 목록 조회 에러:", error);
@@ -61,7 +65,7 @@ const handleRegister = async (newLang) => {
       ...newLang,
       createdBy: authStore.user?.userId || "ADMIN",
     };
-    await api.post("/languages", registrationData);
+    await createLanguage(registrationData);
     alert("새로운 언어가 성공적으로 등록되었습니다.");
     await fetchLanguages();
   } catch (error) {
@@ -81,7 +85,7 @@ const handleDelete = async (id) => {
 
   isSubmitting.value = true;
   try {
-    await api.delete(`/languages/${id}`);
+    await deleteLanguage(id);
     alert("성공적으로 삭제되었습니다.");
     await fetchLanguages();
   } catch (error) {

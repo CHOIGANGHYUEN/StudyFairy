@@ -25,7 +25,13 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import { getRoles } from "@/service/roleService";
+import {
+  getUserRoles,
+  createUserRole,
+  updateUserRole,
+  deleteUserRole,
+} from "@/service/userRoleService";
 import UserRoleForm from "@/components/sys/userRole/UserRoleForm.vue";
 import UserRoleList from "@/components/sys/userRole/UserRoleList.vue";
 
@@ -57,7 +63,7 @@ onMounted(async () => {
 
 const fetchRoles = async () => {
   try {
-    const res = await api.get("/roles");
+    const res = await getRoles();
     roles.value = res.data;
   } catch (error) {
     console.error(error);
@@ -66,9 +72,7 @@ const fetchRoles = async () => {
 
 const fetchMappings = async (page = 1) => {
   try {
-    const res = await api.get("/user-roles", {
-      params: { page, limit: pageSize },
-    });
+    const res = await getUserRoles({ page, limit: pageSize });
 
     if (res.data && res.data.data) {
       mappings.value = res.data.data;
@@ -100,20 +104,20 @@ const handlePageChange = (page) => {
 const handleSubmit = async () => {
   isSubmitting.value = true;
   try {
-    const url = isEditMode.value
-      ? `/user-roles/${editTargetId.value}`
-      : "/user-roles";
-    const method = isEditMode.value ? "put" : "post";
     const payload = {
       ...form.value,
       createdBy: authStore.user?.userid || "SYSTEM",
       changedBy: authStore.user?.userid || "SYSTEM",
     };
 
-    await api[method](url, payload);
+    if (isEditMode.value) {
+      await updateUserRole(editTargetId.value, payload);
+    } else {
+      await createUserRole(payload);
+    }
 
     alert(
-      `사용자-권한 매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`
+      `사용자-권한 매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`,
     );
     resetForm();
     await fetchMappings(currentPage.value);
@@ -140,7 +144,7 @@ const deleteMapping = async (id) => {
   if (!confirm("정말 이 권한 매핑을 삭제하시겠습니까?")) return;
   isSubmitting.value = true;
   try {
-    await api.delete(`/user-roles/${id}`);
+    await deleteUserRole(id);
     alert("삭제되었습니다.");
     if (isEditMode.value && editTargetId.value === id) resetForm();
     await fetchMappings(currentPage.value);

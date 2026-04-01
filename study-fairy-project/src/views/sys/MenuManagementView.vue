@@ -20,31 +20,37 @@
     </PageTitle>
 
     <MenuForm
-        :is-edit-mode="isEditMode"
-        :is-submitting="isSubmitting"
-        v-model:formData="menuForm"
-        :available-languages="availableLanguages"
-        :flat-menus="flatMenus"
-        @submit="handleRegisterOrUpdate"
-        @reset="resetForm"
+      :is-edit-mode="isEditMode"
+      :is-submitting="isSubmitting"
+      v-model:formData="menuForm"
+      :available-languages="availableLanguages"
+      :flat-menus="flatMenus"
+      @submit="handleRegisterOrUpdate"
+      @reset="resetForm"
     />
 
     <MenuList
-        :paginated-menus="paginatedMenus"
-        :expanded-menus="expandedMenus"
-        :current-page="currentPage"
-        :total-pages="totalPages"
-        @toggle="toggleMenu"
-        @edit="editMenu"
-        @delete="deleteMenu"
-        @page-change="handlePageChange"
+      :paginated-menus="paginatedMenus"
+      :expanded-menus="expandedMenus"
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      @toggle="toggleMenu"
+      @edit="editMenu"
+      @delete="deleteMenu"
+      @page-change="handlePageChange"
     />
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import api from "@/service/api";
+import { getLanguages } from "@/service/languageService";
+import {
+  getMenus,
+  createMenu,
+  updateMenu,
+  deleteMenu,
+} from "@/service/menuService";
 import PageTitle from "@/components/PageTitle.vue";
 import MenuForm from "@/components/sys/menu/MenuForm.vue";
 import MenuList from "@/components/sys/menu/MenuList.vue";
@@ -105,7 +111,7 @@ const toggleMenu = (id) => {
 
 const fetchLanguages = async () => {
   try {
-    const res = await api.get("/languages");
+    const res = await getLanguages();
     availableLanguages.value = res.data;
     if (availableLanguages.value.length > 0 && !menuForm.value.langu) {
       menuForm.value.langu = availableLanguages.value[0].langu;
@@ -117,7 +123,7 @@ const fetchLanguages = async () => {
 
 const fetchMenus = async () => {
   try {
-    const res = await api.get("/menus");
+    const res = await getMenus();
     menuTree.value = res.data;
   } catch (error) {
     console.error("Error fetching menus:", error);
@@ -128,13 +134,15 @@ const fetchMenus = async () => {
 const handleRegisterOrUpdate = async () => {
   isSubmitting.value = true;
   try {
-    const url = isEditMode.value ? `/menus/${editTargetId.value}` : "/menus";
-    const method = isEditMode.value ? "put" : "post";
     const payload = {
       ...menuForm.value,
       parentMenuId: menuForm.value.parentMenuId || null,
     };
-    await api[method](url, payload);
+    if (isEditMode.value) {
+      await updateMenu(editTargetId.value, payload);
+    } else {
+      await createMenu(payload);
+    }
     alert("완료되었습니다.");
     resetForm();
     await fetchMenus();
@@ -170,19 +178,6 @@ const resetForm = () => {
     ordNum: 1,
     useYn: 1,
   };
-};
-
-const deleteMenu = async (id) => {
-  if (!confirm("하위 메뉴까지 모두 삭제될 수 있습니다. 정말 삭제하시겠습니까?"))
-    return;
-  try {
-    await api.delete(`/menus/${id}`);
-    alert("삭제되었습니다.");
-    await fetchMenus();
-  } catch (error) {
-    const message = error.response?.data?.message || "삭제에 실패했습니다.";
-    alert(`오류: ${message}`);
-  }
 };
 
 onMounted(() => {

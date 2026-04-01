@@ -20,18 +20,18 @@
     </PageTitle>
 
     <RoleForm
-        :is-edit-mode="isEditMode"
-        :is-submitting="isSubmitting"
-        v-model:formData="form"
-        @submit="handleSubmit"
-        @reset="resetForm"
+      :is-edit-mode="isEditMode"
+      :is-submitting="isSubmitting"
+      v-model:formData="form"
+      @submit="handleSubmit"
+      @reset="resetForm"
     />
 
     <RoleList
-        :roles="roles"
-        :is-submitting="isSubmitting"
-        @edit="editRole"
-        @delete="deleteRole"
+      :roles="roles"
+      :is-submitting="isSubmitting"
+      @edit="editRole"
+      @delete="deleteRole"
     />
   </div>
 </template>
@@ -39,7 +39,12 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import {
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+} from "@/service/roleService";
 import PageTitle from "@/components/PageTitle.vue";
 import RoleForm from "@/components/sys/role/RoleForm.vue";
 import RoleList from "@/components/sys/role/RoleList.vue";
@@ -63,7 +68,7 @@ onMounted(() => {
 
 const fetchRoles = async () => {
   try {
-    const response = await api.get("/roles");
+    const response = await getRoles();
     roles.value = response.data;
   } catch (error) {
     console.error("권한 목록 조회 에러:", error);
@@ -74,8 +79,6 @@ const handleSubmit = async () => {
   if (!form.value.roleId) return;
   isSubmitting.value = true;
   try {
-    const url = isEditMode.value ? `/roles/${editTargetId.value}` : "/roles";
-    const method = isEditMode.value ? "put" : "post";
     const payload = {
       roleId: form.value.roleId,
       description: form.value.description,
@@ -84,7 +87,11 @@ const handleSubmit = async () => {
       changedBy: authStore.user?.userid || "SYSTEM",
     };
 
-    await api[method](url, payload);
+    if (isEditMode.value) {
+      await updateRole(editTargetId.value, payload);
+    } else {
+      await createRole(payload);
+    }
 
     alert(`권한이 성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
     resetForm();
@@ -106,24 +113,6 @@ const editRole = (role) => {
     useYn: role.useYn,
   };
   window.scrollTo(0, 0);
-};
-
-const deleteRole = async (id) => {
-  if (!confirm("정말로 이 권한을 삭제하시겠습니까?")) return;
-  isSubmitting.value = true;
-  try {
-    await api.delete(`/roles/${id}`);
-    alert("성공적으로 삭제되었습니다.");
-    if (isEditMode.value && editTargetId.value === id) {
-      resetForm();
-    }
-    await fetchRoles(); // 데이터 최신화
-  } catch (error) {
-    const message = error.response?.data?.message || "삭제에 실패했습니다.";
-    alert(`오류: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
 };
 
 const resetForm = () => {

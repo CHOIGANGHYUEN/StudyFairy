@@ -22,7 +22,7 @@
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as companyService from "@/service/companyService";
-import api from "@/service/api";
+import { getLanguages } from "@/service/languageService";
 import PageTitle from "@/components/PageTitle.vue";
 import CompanyForm from "@/components/sys/company/CompanyForm.vue";
 import CompanyList from "@/components/sys/company/CompanyList.vue";
@@ -62,7 +62,7 @@ onMounted(async () => {
 
 const fetchLanguages = async () => {
   try {
-    const res = await api.get("/languages");
+    const res = await getLanguages();
     languages.value = res.data;
   } catch (error) {
     console.error("Failed to fetch languages:", error);

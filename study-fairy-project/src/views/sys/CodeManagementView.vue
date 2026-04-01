@@ -25,7 +25,11 @@
         코드 카테고리 데이터가 없습니다. 시스템의 기본 코드 카테고리를
         설정하려면 아래 버튼을 클릭하세요.
       </p>
-      <button class="btn btn-primary" @click="handleInitialize" :disabled="isSubmitting">
+      <button
+        class="btn btn-primary"
+        @click="handleInitialize"
+        :disabled="isSubmitting"
+      >
         {{ isSubmitting ? "설정 중..." : "기본 카테고리 설정" }}
       </button>
     </div>
@@ -39,27 +43,27 @@
 
       <div class="code-management-layout">
         <CodeGroupList
-            :code-heads="codeHeads"
-            :selected-group-code="selectedGroupCode"
-            @select-group="selectGroup"
+          :code-heads="codeHeads"
+          :selected-group-code="selectedGroupCode"
+          @select-group="selectGroup"
         />
 
         <div class="right-panel">
-            <CodeGroupEditor
-                v-model:formData="headForm"
-                :head-form-mode="headFormMode"
-                :is-submitting="isSubmitting"
-                @new="newHead"
-                @save="saveHead"
-                @delete="deleteHead"
-            />
-            <CodeItemsManager
-                :items="codeItems"
-                :head-form="headForm"
-                :selected-group-code="selectedGroupCode"
-                @save-item="handleSaveItem"
-                @delete-item="deleteItem"
-            />
+          <CodeGroupEditor
+            v-model:formData="headForm"
+            :head-form-mode="headFormMode"
+            :is-submitting="isSubmitting"
+            @new="newHead"
+            @save="saveHead"
+            @delete="deleteHead"
+          />
+          <CodeItemsManager
+            :items="codeItems"
+            :head-form="headForm"
+            :selected-group-code="selectedGroupCode"
+            @save-item="handleSaveItem"
+            @delete-item="deleteItem"
+          />
         </div>
       </div>
     </template>
@@ -68,7 +72,18 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import api from "@/service/api";
+import {
+  getCodeCategories,
+  initializeCategories,
+  getCodeHeads,
+  getCodeItems,
+  createCodeHead,
+  updateCodeHead,
+  deleteCodeHead,
+  createCodeItem,
+  updateCodeItem,
+  deleteCodeItem,
+} from "@/service/codeService";
 import PageTitle from "@/components/PageTitle.vue";
 import CodeCategorySelector from "@/components/sys/code/CodeCategorySelector.vue";
 import CodeGroupList from "@/components/sys/code/CodeGroupList.vue";
@@ -104,8 +119,9 @@ const headForm = ref(getEmptyHeadForm());
 
 const fetchCategories = async () => {
   try {
-    const res = await api.get(
-      `/codes/items/${CATEGORY_CODE_FOR_CATEGORIES}/${GROUP_CODE_FOR_CATEGORIES}`
+    const res = await getCodeCategories(
+      CATEGORY_CODE_FOR_CATEGORIES,
+      GROUP_CODE_FOR_CATEGORIES,
     );
     const responseData = res.data.data || res.data;
     categories.value = Array.isArray(responseData) ? responseData : [];
@@ -127,7 +143,7 @@ const fetchCategories = async () => {
 const handleInitialize = async () => {
   isSubmitting.value = true;
   try {
-    await api.post(`/codes/initialize-categories`);
+    await initializeCategories();
     alert("기본 카테고리가 성공적으로 설정되었습니다.");
     await fetchCategories();
   } catch (error) {
@@ -146,7 +162,7 @@ const onCategoryChange = () => {
 const fetchHeads = async () => {
   if (!selectedCategory.value) return;
   try {
-    const res = await api.get(`/codes/heads/${selectedCategory.value}`);
+    const res = await getCodeHeads(selectedCategory.value);
     const responseData = res.data.data || res.data;
     codeHeads.value = Array.isArray(responseData) ? responseData : [];
     if (codeHeads.value.length > 0) {
@@ -165,9 +181,7 @@ const fetchItems = async (groupCode) => {
     return;
   }
   try {
-    const res = await api.get(
-      `/codes/items/${selectedCategory.value}/${groupCode}`
-    );
+    const res = await getCodeItems(selectedCategory.value, groupCode);
     const responseData = res.data.data || res.data;
     codeItems.value = Array.isArray(responseData) ? responseData : [];
   } catch (error) {
@@ -198,13 +212,17 @@ const saveHead = async () => {
   }
   isSubmitting.value = true;
   const isCreate = headFormMode.value === "create";
-  const url = isCreate
-    ? `/codes/heads`
-    : `/codes/heads/${selectedCategory.value}/${headForm.value.groupCode}`;
-  const method = isCreate ? "post" : "put";
 
   try {
-    await api[method](url, headForm.value);
+    if (isCreate) {
+      await createCodeHead(headForm.value);
+    } else {
+      await updateCodeHead(
+        selectedCategory.value,
+        headForm.value.groupCode,
+        headForm.value,
+      );
+    }
     alert(`그룹이 ${isCreate ? "생성" : "저장"}되었습니다.`);
     await fetchHeads();
     const newGroup = codeHeads.value.find(
@@ -222,7 +240,7 @@ const saveHead = async () => {
 const deleteHead = async (groupCode) => {
   if (!confirm(`[${groupCode}] 그룹을 삭제하시겠습니까?`)) return;
   try {
-    await api.delete(`/codes/heads/${selectedCategory.value}/${groupCode}`);
+    await deleteCodeHead(selectedCategory.value, groupCode);
     alert("삭제되었습니다.");
     fetchHeads();
   } catch (error) {
@@ -237,17 +255,22 @@ const handleSaveItem = async ({ itemData, isCreate }) => {
     return;
   }
   isSubmitting.value = true;
-  const url = isCreate
-    ? `/codes/items`
-    : `/codes/items/${selectedCategory.value}/${selectedGroupCode.value}/${itemData.subCode}`;
-  const method = isCreate ? "post" : "put";
   const payload = {
     ...itemData,
     categoryCode: selectedCategory.value,
     groupCode: selectedGroupCode.value,
   };
   try {
-    await api[method](url, payload);
+    if (isCreate) {
+      await createCodeItem(payload);
+    } else {
+      await updateCodeItem(
+        selectedCategory.value,
+        selectedGroupCode.value,
+        itemData.subCode,
+        payload,
+      );
+    }
     alert(`코드가 ${isCreate ? "생성" : "수정"}되었습니다.`);
     await fetchItems(selectedGroupCode.value);
   } catch (error) {
@@ -261,9 +284,7 @@ const handleSaveItem = async ({ itemData, isCreate }) => {
 const deleteItem = async (item) => {
   if (!confirm(`[${item.subCode}] 코드를 삭제하시겠습니까?`)) return;
   try {
-    await api.delete(
-      `/codes/items/${item.categoryCode}/${item.groupCode}/${item.subCode}`,
-    );
+    await deleteCodeItem(item.categoryCode, item.groupCode, item.subCode);
     alert("삭제되었습니다.");
     fetchItems(item.groupCode);
   } catch (error) {

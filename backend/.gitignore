@@ -4,5 +4,4 @@
 # Log files
 /logs
 
-# Environment variables
-.env
+

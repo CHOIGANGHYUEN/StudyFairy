@@ -164,7 +164,8 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
-import api from "@/service/api";
+import { getMenus } from "@/service/menuService";
+import { getRoleMenus } from "@/service/roleMenuService";
 
 const authStore = useAuthStore();
 const allowedPaths = ref(new Set());
@@ -176,8 +177,8 @@ onMounted(async () => {
 
   try {
     const [menuRes, roleMenuRes] = await Promise.all([
-      api.get("/menus"),
-      api.get("/role-menus"),
+      getMenus(),
+      getRoleMenus(),
     ]);
 
     const menuIdToPath = {};

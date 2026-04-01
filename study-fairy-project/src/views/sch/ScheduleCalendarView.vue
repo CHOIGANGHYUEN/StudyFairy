@@ -101,9 +101,10 @@ import FullCalendar from "@fullcalendar/vue3";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import PageTitle from "@/components/PageTitle.vue";
-import ScheduleDetailModal from "@/components/ScheduleDetailModal.vue";
-import ScheduleBoardView from "@/components/ScheduleBoardView.vue";
-import api from "@/service/api";
+import ScheduleDetailModal from "@/components/sch/ScheduleDetailModal.vue";
+import ScheduleBoardView from "@/components/sch/ScheduleBoardView.vue";
+import { getCodeItems } from "@/service/codeService";
+import { getSchedules, getScheduleDetails } from "@/service/scheduleService";
 import { useAuthStore } from "@/stores/useAuthStore";
 
 const authStore = useAuthStore();
@@ -136,7 +137,7 @@ onMounted(async () => {
 // --- Methods ---
 
 async function fetchScheduleGroups() {
-  const response = await api.get("/codes/items/SYS/SYS001").catch(() => {
+  const response = await getCodeItems("SYS", "SYS001").catch(() => {
     console.error("Failed to fetch schedule groups. Using fallback.");
     return { data: [] };
   });
@@ -199,13 +200,11 @@ async function fetchScheduleData() {
 
   // 1. Find the parent schedule (sysSchedule)
   try {
-    const response = await api.get("/schedules", {
-      params: {
-        schGroupCode: schGroupCode.value,
-        userId: authStore.user.userId,
-        schYear: currentYear.value,
-        schMonth: String(currentMonth.value).padStart(2, "0"),
-      },
+    const response = await getSchedules({
+      schGroupCode: schGroupCode.value,
+      userId: authStore.user.userId,
+      schYear: currentYear.value,
+      schMonth: String(currentMonth.value).padStart(2, "0"),
     });
 
     if (response.data && response.data.length > 0) {
@@ -229,9 +228,7 @@ async function fetchScheduleDetails() {
   if (!scheduleId.value) return;
 
   try {
-    const response = await api.get("/schedule-details", {
-      params: { scheduleId: scheduleId.value },
-    });
+    const response = await getScheduleDetails({ scheduleId: scheduleId.value });
     // Map backend data to FullCalendar event format
     events.value = response.data.map((detail) => ({
       id: detail.id,
