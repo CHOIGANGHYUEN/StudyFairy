@@ -21,6 +21,7 @@ import UnitManagementView from "@/views/erp/com/UnitManagementView.vue";
 import CompanyManagementView from "@/views/erp/com/CompanyManagementView.vue";
 import MatTypeManagementView from "@/views/erp/com/MatTypeManagementView.vue";
 import MatClassManagementView from "@/views/erp/com/MatClassManagementView.vue";
+import TableManagementView from "@/views/sys/TableManagementView.vue";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
@@ -120,6 +121,11 @@ const routes = [
     path: "/erp/com/matclasses",
     name: "matclasses",
     component: MatClassManagementView,
+  },
+  {
+    path: "/sys/tables",
+    name: "tables",
+    component: TableManagementView,
   },
   // src/router/index.js (또는 관련 라우터 설정 파일) 내부의 routes 배열에 추가
 

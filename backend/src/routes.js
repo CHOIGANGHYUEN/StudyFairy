@@ -21,6 +21,7 @@ const companyRoutes = require("./erp/route/companyRoutes");
 const unitRoutes = require("./erp/route/unitRoutes");
 const matTypeRoutes = require("./erp/route/matTypeRoutes");
 const matClassRoutes = require("./erp/route/matClassRoutes");
+const tableRoutes = require("./sys/route/tableRoutes");
 
 // Public routes
 router.use("/auth", authRoutes);
@@ -43,5 +44,6 @@ router.use("/companies", companyRoutes);
 router.use("/units", unitRoutes);
 router.use("/mat-types", matTypeRoutes);
 router.use("/mat-classes", matClassRoutes); // 프론트엔드의 api.get("/mat-classes")에 맞춤
+router.use("/tables", tableRoutes); // 프론트엔드의 api.get("/mat-classes")에 맞춤
 
 module.exports = router;
