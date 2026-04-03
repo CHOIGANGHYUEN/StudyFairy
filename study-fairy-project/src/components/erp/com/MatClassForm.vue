@@ -3,10 +3,10 @@
     <div class="form-grid">
       <!-- Main MatClass Fields -->
       <div class="form-group">
-        <label for="companyId">회사 ID *</label>
+        <label for="company">회사 ID *</label>
         <input
-          id="companyId"
-          v-model="form.companyId"
+          id="company"
+          v-model="form.company"
           type="text"
           required
           :disabled="isEditMode"
@@ -106,7 +106,7 @@ const availableParentClasses = computed(() => {
   return props.matClasses.filter(
     (c) =>
       c.classLevel === form.value.classLevel - 1 &&
-      c.companyId === form.value.companyId,
+      c.company === form.value.company,
   );
 });
 
@@ -128,7 +128,7 @@ watch(
       {};
     form.value = {
       id: newData?.id || null,
-      companyId: newData?.companyId || "1000",
+      company: newData?.company || "1000",
       matClass: newData?.matClass || "",
       parentClass: newData?.parentClass || "",
       classLevel: newData?.classLevel || 1,

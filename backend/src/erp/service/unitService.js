@@ -21,8 +21,8 @@ exports.getUnitById = async (id) => {
 
 // 단위 생성
 exports.createUnit = async (unitData) => {
-  const { unitId, unitNm, baseUnitYn } = unitData;
-  if (!unitId || !unitNm || baseUnitYn === null || baseUnitYn === undefined) {
+  const { unit, unitNm, baseUnitYn } = unitData;
+  if (!unit || !unitNm || baseUnitYn === null || baseUnitYn === undefined) {
     const error = new Error("단위 ID, 단위명, 기본 단위 여부는 필수입니다.");
     error.statusCode = 400;
     throw error;
@@ -46,17 +46,17 @@ exports.createUnit = async (unitData) => {
 
 // 단위 수정
 exports.updateUnit = async (id, unitData) => {
-  const { unitId, unitNm, baseUnitYn } = unitData;
-  if (!unitId || !unitNm || baseUnitYn === null || baseUnitYn === undefined) {
+  const { unit, unitNm, baseUnitYn } = unitData;
+  if (!unit || !unitNm || baseUnitYn === null || baseUnitYn === undefined) {
     const error = new Error("단위 ID, 단위명, 기본 단위 여부는 필수입니다.");
     error.statusCode = 400;
     throw error;
   }
 
-  // Check for duplicate unitId
+  // Check for duplicate unit
   const existingUnit = await Unit.findOne({
     where: {
-      unitId: unitId,
+      unit: unit,
       id: { [Op.ne]: id }, // Exclude the current unit being updated
     },
   });

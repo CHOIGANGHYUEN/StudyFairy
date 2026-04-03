@@ -7,20 +7,24 @@ exports.getUnits = async (req, res) => {
     res.status(200).json(units);
   } catch (err) {
     console.error("단위 목록 조회 에러:", err);
-    res.status(err.statusCode || 500).json({ message: err.message || "서버 에러가 발생했습니다." });
+    res
+      .status(err.statusCode || 500)
+      .json({ message: err.message || "서버 에러가 발생했습니다." });
   }
 };
 
 // 특정 ID의 단위 조회
 exports.getUnitById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const unit = await unitService.getUnitById(id);
-        res.status(200).json(unit);
-    } catch (err) {
-        console.error("단위 조회 에러:", err);
-        res.status(err.statusCode || 500).json({ message: err.message || "서버 에러가 발생했습니다." });
-    }
+  try {
+    const { id } = req.params;
+    const unit = await unitService.getUnitById(id);
+    res.status(200).json(unit);
+  } catch (err) {
+    console.error("단위 조회 에러:", err);
+    res
+      .status(err.statusCode || 500)
+      .json({ message: err.message || "서버 에러가 발생했습니다." });
+  }
 };
 
 // 단위 생성

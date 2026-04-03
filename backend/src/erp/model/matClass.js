@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      companyId: {
+      company: {
         type: DataTypes.STRING(45),
         allowNull: false,
       },
@@ -43,10 +43,10 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         {
           unique: true,
-          fields: ["companyId", "matClass"],
+          fields: ["company", "matClass"],
           name: "sysMatClass_U1",
         },
-        { fields: ["companyId", "parentClass"], name: "sysMatClass_IDX1" },
+        { fields: ["company", "parentClass"], name: "sysMatClass_IDX1" },
       ],
     },
   );

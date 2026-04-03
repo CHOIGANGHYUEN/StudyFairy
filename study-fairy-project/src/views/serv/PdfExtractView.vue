@@ -350,12 +350,6 @@ async function pickerCallback(data) {
   color: var(--text-color-primary);
 }
 
-.page-subtitle {
-  margin-top: 0.5rem;
-  font-size: 1rem;
-  color: var(--text-color-secondary);
-}
-
 /* --- Layout --- */
 .pdf-extract-layout {
   display: grid;

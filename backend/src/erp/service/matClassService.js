@@ -2,7 +2,7 @@ const { MatClass, MatClassx, sequelize } = require("../../index");
 
 exports.getMatClasses = async (filters = {}) => {
   const where = {};
-  if (filters.companyId) where.companyId = filters.companyId;
+  if (filters.company) where.company = filters.company;
 
   return await MatClass.findAll({
     where,
@@ -12,7 +12,7 @@ exports.getMatClasses = async (filters = {}) => {
 
 exports.createMatClass = async (data, userId) => {
   const {
-    companyId,
+    company,
     matClass,
     parentClass,
     classLevel,
@@ -26,7 +26,7 @@ exports.createMatClass = async (data, userId) => {
   try {
     const newMatClass = await MatClass.create(
       {
-        companyId,
+        company,
         matClass,
         parentClass: parentClass || null,
         classLevel,
@@ -42,7 +42,7 @@ exports.createMatClass = async (data, userId) => {
       await MatClassx.create(
         {
           langu,
-          companyId,
+          company,
           matClass,
           matClassNm,
           description,
@@ -63,7 +63,7 @@ exports.createMatClass = async (data, userId) => {
 
 exports.updateMatClass = async (id, data, userId) => {
   const {
-    companyId,
+    company,
     matClass,
     parentClass,
     classLevel,
@@ -84,7 +84,7 @@ exports.updateMatClass = async (id, data, userId) => {
   try {
     await matClassRecord.update(
       {
-        companyId,
+        company,
         matClass,
         parentClass: parentClass || null,
         classLevel,
@@ -96,7 +96,7 @@ exports.updateMatClass = async (id, data, userId) => {
 
     if (langu && matClassNm) {
       const [matClassxRecord, created] = await MatClassx.findOrCreate({
-        where: { langu, companyId, matClass },
+        where: { langu, company, matClass },
         defaults: {
           matClassNm,
           description,
@@ -135,7 +135,7 @@ exports.deleteMatClass = async (id) => {
     await MatClassx.destroy({
       where: {
         matClass: matClassRecord.matClass,
-        companyId: matClassRecord.companyId,
+        company: matClassRecord.company,
       },
       transaction: t,
     });

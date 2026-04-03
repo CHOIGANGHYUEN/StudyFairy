@@ -4,7 +4,7 @@
       <template #icon>
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          class="icon"
+          class="icon text-cyan-600"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -96,9 +96,3 @@ const handleDelete = async (id) => {
   }
 };
 </script>
-
-<style scoped>
-.icon {
-  color: #0891b2; /* Cyan color for this page's icon */
-}
-</style>

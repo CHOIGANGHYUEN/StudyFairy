@@ -65,30 +65,3 @@ const loadMenuInfo = async () => {
 onMounted(loadMenuInfo);
 watch(() => route.path, loadMenuInfo);
 </script>
-
-<style scoped>
-.page-header {
-  margin-bottom: 2rem;
-}
-.page-title {
-  display: flex;
-  align-items: center;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
-  gap: 0.75rem;
-}
-.icon-wrapper {
-  padding: 0.5rem;
-  background-color: #f1f5f9;
-  border-radius: 0.75rem;
-  display: flex;
-}
-.page-subtitle {
-  color: #64748b;
-  margin-top: 0.5rem;
-  /* 아이콘이 있을 경우 텍스트 시작 위치를 맞추기 위한 마진 (아이콘 너비 + gap) */
-  margin-left: var(--subtitle-margin, 3.25rem);
-}
-</style>

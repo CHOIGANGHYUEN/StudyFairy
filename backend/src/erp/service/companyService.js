@@ -39,7 +39,7 @@ exports.createCompany = async (companyData) => {
     const { names, ...mainData } = companyData;
 
     // 1. Check for required fields
-    if (!mainData.companyId) {
+    if (!mainData.company) {
       const error = new Error("회사 ID는 필수입니다.");
       error.statusCode = 400;
       throw error;
@@ -52,7 +52,7 @@ exports.createCompany = async (companyData) => {
     if (names && names.length > 0) {
       const companyxData = names.map((item) => ({
         ...item,
-        companyId: newCompany.companyId,
+        company: newCompany.company,
         createdBy: mainData.createdBy,
       }));
       await Companyx.bulkCreate(companyxData, { transaction: t });
@@ -78,7 +78,7 @@ exports.createCompany = async (companyData) => {
 exports.updateCompany = async (id, companyData) => {
   const t = await sequelize.transaction();
   try {
-    const { names, companyId, ...mainData } = companyData;
+    const { names, company, ...mainData } = companyData;
 
     // 1. Update main company record
     const [affectedRows] = await Company.update(mainData, {
@@ -97,7 +97,7 @@ exports.updateCompany = async (id, companyData) => {
       for (const nameData of names) {
         const { langu, companyNm } = nameData;
         const [companyx, created] = await Companyx.findOrCreate({
-          where: { companyId, langu },
+          where: { company, langu },
           defaults: {
             companyNm,
             createdBy: mainData.changedBy,
@@ -135,7 +135,7 @@ exports.deleteCompany = async (id) => {
 
     // 1. Delete associated multilingual names
     await Companyx.destroy({
-      where: { companyId: company.companyId },
+      where: { company: company.company },
       transaction: t,
     });
 

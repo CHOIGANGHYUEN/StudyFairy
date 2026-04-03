@@ -1,5 +1,5 @@
-'use strict';
-const { Model } = require('sequelize');
+"use strict";
+const { Model } = require("sequelize");
 
 module.exports = (sequelize, DataTypes) => {
   class Unit extends Model {
@@ -8,68 +8,71 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  Unit.init({
-    id: {
-      type: DataTypes.BIGINT,
-      primaryKey: true,
-      autoIncrement: true,
+  Unit.init(
+    {
+      id: {
+        type: DataTypes.BIGINT,
+        primaryKey: true,
+        autoIncrement: true,
+      },
+      unit: {
+        type: DataTypes.STRING(45),
+        allowNull: false,
+        unique: true,
+        field: "unit",
+      },
+      unitNm: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        field: "unitNm",
+      },
+      baseUnitYn: {
+        type: DataTypes.INTEGER(1),
+        allowNull: false,
+        field: "baseUnitYn",
+      },
+      baseUnit: {
+        type: DataTypes.STRING(45),
+        field: "baseUnit",
+      },
+      convRate: {
+        type: DataTypes.DECIMAL(15, 5),
+        field: "convRate",
+      },
+      useYn: {
+        type: DataTypes.STRING(255),
+        field: "useYn",
+      },
+      dispOrd: {
+        type: DataTypes.INTEGER(6),
+        field: "dispOrd",
+      },
+      createdBy: {
+        type: DataTypes.STRING(45),
+        field: "createdBy",
+      },
+      createdAt: {
+        type: DataTypes.DATE,
+        field: "createdAt",
+      },
+      changedBy: {
+        type: DataTypes.STRING(45),
+        field: "changedBy",
+      },
+      changedAt: {
+        type: DataTypes.DATE,
+        field: "changedAt",
+      },
     },
-    unitId: {
-      type: DataTypes.STRING(45),
-      allowNull: false,
-      unique: true,
-      field: 'unitId'
+    {
+      sequelize,
+      modelName: "Unit",
+      tableName: "sysUnit",
+      timestamps: true,
+      createdAt: "createdAt",
+      updatedAt: "changedAt",
     },
-    unitNm: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      field: 'unitNm'
-    },
-    baseUnitYn: {
-      type: DataTypes.INTEGER(1),
-      allowNull: false,
-      field: 'baseUnitYn'
-    },
-    baseUnitId: {
-      type: DataTypes.STRING(45),
-      field: 'baseUnitId'
-    },
-    convRate: {
-      type: DataTypes.DECIMAL(15, 5),
-      field: 'convRate'
-    },
-    useYn: {
-      type: DataTypes.STRING(255),
-      field: 'useYn'
-    },
-    dispOrd: {
-      type: DataTypes.INTEGER(6),
-      field: 'dispOrd'
-    },
-    createdBy: {
-      type: DataTypes.STRING(45),
-      field: 'createdBy'
-    },
-    createdAt: {
-      type: DataTypes.DATE,
-      field: 'createdAt'
-    },
-    changedBy: {
-      type: DataTypes.STRING(45),
-      field: 'changedBy'
-    },
-    changedAt: {
-      type: DataTypes.DATE,
-      field: 'changedAt'
-    }
-  }, {
-    sequelize,
-    modelName: 'Unit',
-    tableName: 'sysUnit',
-    timestamps: true,
-    createdAt: 'createdAt',
-    updatedAt: 'changedAt'
-  });
+  );
 
   return Unit;
 };

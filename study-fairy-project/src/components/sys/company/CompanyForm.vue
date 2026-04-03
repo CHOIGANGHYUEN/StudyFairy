@@ -19,8 +19,8 @@
           <label>회사 ID *</label>
           <input
             type="text"
-            :value="formData.companyId"
-            @input="updateForm('companyId', $event.target.value)"
+            :value="formData.company"
+            @input="updateForm('company', $event.target.value)"
             required
             :disabled="isEditMode"
           />
@@ -147,12 +147,8 @@
             @change="updateForm('currency', $event.target.value)"
           >
             <option value="">선택</option>
-            <option
-              v-for="unit in units"
-              :key="unit.unitId"
-              :value="unit.unitId"
-            >
-              {{ unit.unitNm }} ({{ unit.unitId }})
+            <option v-for="unit in units" :key="unit.unit" :value="unit.unit">
+              {{ unit.unitNm }} ({{ unit.unit }})
             </option>
           </select>
         </div>
@@ -204,7 +200,7 @@
         <button
           type="submit"
           class="btn btn-primary w-full"
-          :disabled="isSubmitting || !formData.companyId"
+          :disabled="isSubmitting || !formData.company"
         >
           {{
             isSubmitting ? "처리 중..." : isEditMode ? "수정하기" : "등록하기"

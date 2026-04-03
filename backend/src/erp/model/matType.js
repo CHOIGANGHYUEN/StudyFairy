@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      companyId: {
+      company: {
         type: DataTypes.STRING(45),
         allowNull: false,
       },

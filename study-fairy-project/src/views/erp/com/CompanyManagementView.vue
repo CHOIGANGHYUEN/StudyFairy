@@ -36,7 +36,7 @@ const languages = ref([]);
 const authStore = useAuthStore();
 
 const getInitialForm = () => ({
-  companyId: "",
+  company: "",
   repNm: "",
   regNo: "",
   corpNo: "",
@@ -80,7 +80,7 @@ const fetchCompanies = async () => {
 };
 
 const handleSubmit = async () => {
-  if (!form.value.companyId) return;
+  if (!form.value.company) return;
   isSubmitting.value = true;
   try {
     const payload = { ...form.value };

@@ -19,16 +19,18 @@
             <td colspan="8" class="text-center">데이터가 없습니다.</td>
           </tr>
           <tr v-for="unit in units" :key="unit.id">
-            <td>{{ unit.unitId }}</td>
+            <td>{{ unit.unit }}</td>
             <td>{{ unit.unitNm }}</td>
-            <td>{{ unit.baseUnitYn ? 'Yes' : 'No' }}</td>
-            <td>{{ unit.baseUnitId }}</td>
+            <td>{{ unit.baseUnitYn ? "Yes" : "No" }}</td>
+            <td>{{ unit.baseUnit }}</td>
             <td>{{ unit.convRate }}</td>
-            <td>{{ unit.useYn ? 'Yes' : 'No' }}</td>
+            <td>{{ unit.useYn ? "Yes" : "No" }}</td>
             <td>{{ unit.dispOrd }}</td>
             <td class="action-buttons">
               <button @click="emit('edit', unit)" class="btn-icon">✏️</button>
-              <button @click="emit('delete', unit.id)" class="btn-icon">🗑️</button>
+              <button @click="emit('delete', unit.id)" class="btn-icon">
+                🗑️
+              </button>
             </td>
           </tr>
         </tbody>

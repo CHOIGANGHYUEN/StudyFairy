@@ -1,13 +1,13 @@
 <template>
   <div v-if="visible" class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-container">
       <div class="modal-header">
-        <h3>
+        <h3 class="modal-title">
           {{ date }} 상세 일정
-          <span v-if="isCopyMode" class="text-blue-500">(복사 등록)</span>
+          <span v-if="isCopyMode" class="text-blue-600">(복사 등록)</span>
           <span v-else>{{ detailData ? "수정" : "등록" }}</span>
         </h3>
-        <button class="close-btn" @click="$emit('close')" title="닫기">
+        <button class="btn-close" @click="$emit('close')" title="닫기">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -179,8 +179,8 @@
           </div>
         </div>
 
-        <div class="modal-footer relative">
-          <div v-if="showToast" class="toast-message absolute-toast">
+        <div class="modal-footer relative justify-between">
+          <div v-if="showToast" class="toast">
             <svg
               class="icon-sm"
               fill="none"
@@ -197,8 +197,12 @@
             {{ toastMessage }}
           </div>
 
-          <div class="footer-left">
-            <button type="button" class="btn-cancel" @click="$emit('close')">
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="btn btn-outline"
+              @click="$emit('close')"
+            >
               <svg
                 class="icon-sm"
                 fill="none"
@@ -217,7 +221,7 @@
             <button
               v-if="detailData && !isCopyMode"
               type="button"
-              class="btn-danger"
+              class="btn btn-danger"
               @click="handleDelete"
               :disabled="isSubmitting"
             >
@@ -238,11 +242,11 @@
             </button>
           </div>
 
-          <div class="footer-right">
+          <div class="flex items-center gap-2">
             <button
               v-if="detailData && !isCopyMode"
               type="button"
-              class="btn-outline-primary"
+              class="btn btn-outline"
               @click="handleSwitchToCopy"
               :disabled="isSubmitting"
               title="현재 내용을 복사하여 새로운 일정으로 등록합니다."
@@ -266,7 +270,7 @@
             <button
               v-if="!detailData || isCopyMode"
               type="button"
-              class="btn-secondary"
+              class="btn btn-secondary"
               @click="submitAndContinue"
               :disabled="isSubmitting"
             >
@@ -285,7 +289,11 @@
               </svg>
               저장 후 계속 등록
             </button>
-            <button type="submit" class="btn-primary" :disabled="isSubmitting">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              :disabled="isSubmitting"
+            >
               <svg
                 class="icon-sm"
                 fill="none"
@@ -550,315 +558,3 @@ const extractTimeLocal = (dateVal) => {
   return `${hh}:${min}`;
 };
 </script>
-
-<style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(15, 23, 42, 0.5);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
-}
-
-.modal-content {
-  background: white;
-  width: 90%;
-  max-width: 700px;
-  border-radius: 16px;
-  box-shadow:
-    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
-  display: flex;
-  flex-direction: column;
-  max-height: 90vh;
-  animation: slideUp 0.3s ease-out;
-}
-
-.modal-header {
-  padding: 1.5rem 1.75rem;
-  border-bottom: 1px solid #f1f5f9;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.35rem;
-  color: #0f172a;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #94a3b8;
-  width: 2rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-}
-
-.close-btn:hover {
-  background-color: #f1f5f9;
-  color: #334155;
-}
-
-.modal-body {
-  padding: 1.5rem 1.75rem;
-  overflow-y: auto;
-}
-
-.section-subtitle {
-  margin: 0 0 1rem 0;
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: #3b82f6;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.divider {
-  border: none;
-  border-top: 1px dashed #cbd5e1;
-  margin: 2rem 0;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem 1.5rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-label {
-  font-size: 0.875rem;
-  font-weight: 700;
-  color: #334155;
-}
-
-input,
-textarea,
-select {
-  padding: 0.65rem 0.875rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  transition: all 0.2s;
-  color: #1e293b;
-  background-color: #f8fafc;
-}
-
-input::placeholder,
-textarea::placeholder {
-  color: #94a3b8;
-}
-
-input:focus,
-textarea:focus,
-select:focus {
-  outline: none;
-  background-color: #ffffff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
-}
-
-.modal-footer {
-  position: relative;
-  padding: 1rem 1.75rem;
-  border-top: 1px solid #e2e8f0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #f8fafc;
-  border-radius: 0 0 16px 16px;
-}
-
-.footer-left,
-.footer-right {
-  display: flex;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  box-sizing: border-box;
-}
-
-.icon-sm {
-  width: 1.1rem;
-  height: 1.1rem;
-}
-
-.text-blue-500 {
-  color: #3b82f6;
-}
-
-.btn-cancel {
-  height: 38px;
-  padding: 0 1.1rem;
-  background: white;
-  color: #475569;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.btn-cancel:hover {
-  background: #f1f5f9;
-  color: #0f172a;
-}
-
-.btn-primary {
-  height: 38px;
-  padding: 0 1.1rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #2563eb;
-  box-shadow: 0 6px 8px -1px rgba(59, 130, 246, 0.4);
-}
-
-.btn-primary:disabled {
-  background: #93c5fd;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.btn-secondary {
-  height: 38px;
-  padding: 0 1.1rem;
-  background: #e2e8f0;
-  color: #334155;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-.btn-secondary:hover:not(:disabled) {
-  background: #cbd5e1;
-}
-
-.btn-outline-primary {
-  height: 38px;
-  padding: 0 1.1rem;
-  background: transparent;
-  color: #3b82f6;
-  border: 1px solid #3b82f6;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-.btn-outline-primary:hover:not(:disabled) {
-  background: #eff6ff;
-}
-
-.btn-danger {
-  height: 38px;
-  padding: 0 1.1rem;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.btn-danger:hover:not(:disabled) {
-  background: #dc2626;
-}
-
-.absolute-toast {
-  position: absolute;
-  top: -3.5rem;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #10b981;
-  color: white;
-  padding: 0.6rem 1.25rem;
-  border-radius: 9999px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  font-weight: 600;
-  font-size: 0.85rem;
-  z-index: 10;
-  animation: fadeInOutToast 2.5s ease-in-out forwards;
-}
-
-@keyframes fadeInOutToast {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 10px);
-  }
-  15% {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-  85% {
-    opacity: 1;
-    transform: translate(-50%, 0);
-  }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, 10px);
-  }
-}
-
-/* Animations */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-</style>

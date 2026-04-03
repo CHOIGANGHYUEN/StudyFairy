@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING(45),
         allowNull: false,
       },
-      companyId: {
+      company: {
         type: DataTypes.STRING(45),
         allowNull: false,
       },
@@ -46,10 +46,10 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         {
           unique: true,
-          fields: ["langu", "companyId", "matClass"],
+          fields: ["langu", "company", "matClass"],
           name: "sysMatClassx_U1",
         },
-        { fields: ["companyId"], name: "sysMatClassx_IDX1" },
+        { fields: ["company"], name: "sysMatClassx_IDX1" },
       ],
     },
   );

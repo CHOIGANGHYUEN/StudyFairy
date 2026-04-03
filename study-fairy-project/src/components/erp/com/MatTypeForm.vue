@@ -13,10 +13,10 @@
         />
       </div>
       <div class="form-group">
-        <label for="companyId">회사 ID *</label>
+        <label for="company">회사 ID *</label>
         <input
-          id="companyId"
-          v-model="form.companyId"
+          id="company"
+          v-model="form.company"
           type="text"
           required
           :disabled="isEditMode"
@@ -106,7 +106,7 @@ watch(
       {};
     form.value = {
       id: newData?.id || null,
-      companyId: newData?.companyId || "1000", // 기본값 설정
+      company: newData?.company || "1000", // 기본값 설정
       matType: newData?.matType || "",
       procureType: newData?.procureType || "E",
       priceCtrlType: newData?.priceCtrlType || "S",

@@ -2,8 +2,8 @@ const { MatType, MatTypex, sequelize, Sequelize } = require("../../index");
 
 exports.getMatTypes = async (filters = {}) => {
   const whereClause = {};
-  if (filters.companyId) {
-    whereClause.companyId = filters.companyId;
+  if (filters.company) {
+    whereClause.company = filters.company;
   }
 
   return await MatType.findAll({
@@ -32,7 +32,7 @@ exports.getMatTypeById = async (id) => {
 
 exports.createMatType = async (data) => {
   const {
-    companyId,
+    company,
     matType,
     matTypeNm,
     langu,
@@ -41,9 +41,9 @@ exports.createMatType = async (data) => {
     ...matTypeData
   } = data;
 
-  if (!companyId || !matType || !matTypeNm || !langu) {
+  if (!company || !matType || !matTypeNm || !langu) {
     const error = new Error(
-      "companyId, matType, matTypeNm, and langu are required.",
+      "company, matType, matTypeNm, and langu are required.",
     );
     error.statusCode = 400;
     throw error;
@@ -53,7 +53,7 @@ exports.createMatType = async (data) => {
   try {
     const newMatType = await MatType.create(
       {
-        companyId,
+        company,
         matType,
         createdBy,
         ...matTypeData,
@@ -63,7 +63,7 @@ exports.createMatType = async (data) => {
 
     await MatTypex.create(
       {
-        companyId,
+        company,
         matType,
         langu,
         matTypeNm,
@@ -79,7 +79,7 @@ exports.createMatType = async (data) => {
     await t.rollback();
     if (err instanceof Sequelize.UniqueConstraintError) {
       let message = "중복된 항목이 이미 존재합니다.";
-      // err.fields is an object like { matType: '...' } or { langu: '..', companyId: '..', matType: '..' }
+      // err.fields is an object like { matType: '...' } or { langu: '..', company: '..', matType: '..' }
       if (
         err.fields &&
         Object.keys(err.fields).length === 1 &&
@@ -128,7 +128,7 @@ exports.updateMatType = async (id, data) => {
       const [matTypexInstance, created] = await matTypex.findOrCreate({
         where: {
           matType: matTypeInstance.matType,
-          companyId: matTypeInstance.companyId,
+          company: matTypeInstance.company,
           langu: langu,
         },
         defaults: {

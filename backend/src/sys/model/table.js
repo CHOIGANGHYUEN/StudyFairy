@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
         sourceKey: "tablen",
         as: "fields",
       });
+      Table.hasMany(models.TableIndex, {
+        foreignKey: "tablen",
+        sourceKey: "tablen",
+        as: "indexes",
+      });
     }
   }
   Table.init(

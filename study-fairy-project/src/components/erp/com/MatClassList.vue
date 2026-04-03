@@ -22,7 +22,7 @@
         </thead>
         <tbody>
           <tr v-for="item in sortedMatClasses" :key="item.id">
-            <td>{{ item.companyId }}</td>
+            <td>{{ item.company }}</td>
             <td class="font-bold">{{ item.matClass }}</td>
             <td :style="{ paddingLeft: `${(item.classLevel - 1) * 20 + 8}px` }">
               <span v-if="item.classLevel > 1" class="text-gray-400 mr-1"

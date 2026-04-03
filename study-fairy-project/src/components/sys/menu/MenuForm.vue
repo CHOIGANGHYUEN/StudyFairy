@@ -133,7 +133,7 @@
           </select>
         </div>
       </div>
-      <div class="p-4 border-t border-slate-200">
+      <div class="p-4 border-t">
         <button
           type="submit"
           class="btn btn-primary w-full"
@@ -186,15 +186,3 @@ const filteredParentOptions = computed(() => {
   );
 });
 </script>
-
-<style scoped>
-.p-4 {
-  padding: 1rem;
-}
-.border-t {
-  border-top-width: 1px;
-}
-.border-slate-200 {
-  border-color: #e2e8f0;
-}
-</style>
