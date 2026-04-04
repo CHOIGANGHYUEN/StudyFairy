@@ -72,9 +72,9 @@ import TableSidebar from "@/components/sys/table/TableSidebar.vue";
 import TableEditor from "@/components/sys/table/TableEditor.vue";
 import TableSqlModal from "@/components/sys/table/TableSqlModal.vue";
 
-import { useTableList } from "@/composables/sys/useTableList";
-import { useTableDetail } from "@/composables/sys/useTableDetail";
-import { useTableSql } from "@/composables/sys/useTableSql";
+import { useTableList } from "@/composables/sys/table/useTableList";
+import { useTableDetail } from "@/composables/sys/table/useTableDetail";
+import { useTableSql } from "@/composables/sys/table/useTableSql";
 
 const { tables, searchLangu, selectedDbms, loadTables } = useTableList();
 

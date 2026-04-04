@@ -84,245 +84,34 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import {
-  getCodeCategories,
-  initializeCategories,
-  getCodeHeads,
-  getCodeItems,
-  createCodeHead,
-  updateCodeHead,
-  deleteCodeHead,
-  createCodeItem,
-  updateCodeItem,
-  deleteCodeItem,
-} from "@/service/codeService";
 import PageTitle from "@/components/PageTitle.vue";
 import CodeCategorySelector from "@/components/sys/code/CodeCategorySelector.vue";
 import CodeGroupList from "@/components/sys/code/CodeGroupList.vue";
 import CodeGroupEditor from "@/components/sys/code/CodeGroupEditor.vue";
 import CodeItemsManager from "@/components/sys/code/CodeItemsManager.vue";
 import Pagination from "@/components/Pagination.vue";
-import { useToast } from "@/composables/useToast";
+import { useCodeManagement } from "@/composables/sys/code/useCodeManagement";
 
-const categories = ref([]);
-const selectedCategory = ref(null);
-const codeHeads = ref([]);
-const codeItems = ref([]);
-const selectedGroupCode = ref(null);
-const isSubmitting = ref(false);
-const headFormMode = ref("view");
-const needsInitialization = ref(false);
-const toast = useToast();
-
-const CATEGORY_CODE_FOR_CATEGORIES = "SYS";
-const GROUP_CODE_FOR_CATEGORIES = "CAT001";
-
-const getEmptyHeadForm = () => {
-  const form = {
-    categoryCode: selectedCategory.value,
-    groupCode: "",
-    description: "",
-    useYn: 1,
-  };
-  for (let i = 1; i <= 10; i++) {
-    form[`fieldNm${i}`] = "";
-  }
-  return form;
-};
-
-const headForm = ref(getEmptyHeadForm());
-
-// --- 페이징 처리 로직 ---
-const currentPage = ref(1);
-const itemsPerPage = ref(10); // 한 페이지당 항목 수
-
-const totalPages = computed(() => {
-  return Math.ceil(codeHeads.value.length / itemsPerPage.value) || 1;
-});
-
-const paginatedCodeHeads = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = start + itemsPerPage.value;
-  return codeHeads.value.slice(start, end);
-});
-
-const fetchCategories = async () => {
-  try {
-    const res = await getCodeCategories(
-      CATEGORY_CODE_FOR_CATEGORIES,
-      GROUP_CODE_FOR_CATEGORIES,
-    );
-    const responseData = res.data.data || res.data;
-    categories.value = Array.isArray(responseData) ? responseData : [];
-    if (categories.value.length > 0) {
-      needsInitialization.value = false;
-      if (!selectedCategory.value) {
-        selectedCategory.value = categories.value[0].subCode;
-      }
-      await fetchHeads();
-    } else {
-      needsInitialization.value = true;
-    }
-  } catch (error) {
-    console.error("Category fetch error:", error);
-    needsInitialization.value = true;
-  }
-};
-
-const handleInitialize = async () => {
-  isSubmitting.value = true;
-  try {
-    await initializeCategories();
-    toast.success("기본 카테고리가 성공적으로 설정되었습니다.");
-    await fetchCategories();
-  } catch (error) {
-    const message = error.response?.data?.message || "Initialization failed";
-    toast.error(`초기화 실패: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const onCategoryChange = () => {
-  newHead();
-  fetchHeads();
-};
-
-const fetchHeads = async () => {
-  if (!selectedCategory.value) return;
-  try {
-    const res = await getCodeHeads(selectedCategory.value);
-    const responseData = res.data.data || res.data;
-    codeHeads.value = Array.isArray(responseData) ? responseData : [];
-    currentPage.value = 1; // 데이터 로드 후 1페이지로 리셋
-    if (codeHeads.value.length > 0) {
-      selectGroup(codeHeads.value[0]);
-    } else {
-      newHead();
-    }
-  } catch (error) {
-    console.error(error);
-  }
-};
-
-const fetchItems = async (groupCode) => {
-  if (!selectedCategory.value || !groupCode) {
-    codeItems.value = [];
-    return;
-  }
-  try {
-    const res = await getCodeItems(selectedCategory.value, groupCode);
-    const responseData = res.data.data || res.data;
-    codeItems.value = Array.isArray(responseData) ? responseData : [];
-  } catch (error) {
-    console.error(error);
-    codeItems.value = [];
-  }
-};
-
-const selectGroup = (head) => {
-  const baseForm = getEmptyHeadForm();
-  headForm.value = { ...baseForm, ...head };
-  selectedGroupCode.value = head.groupCode;
-  headFormMode.value = "edit";
-  fetchItems(head.groupCode);
-};
-
-const newHead = () => {
-  headForm.value = getEmptyHeadForm();
-  selectedGroupCode.value = null;
-  codeItems.value = [];
-  headFormMode.value = "create";
-};
-
-const saveHead = async () => {
-  if (!headForm.value.groupCode) {
-    toast.warning("Group Code is required.");
-    return;
-  }
-  isSubmitting.value = true;
-  const isCreate = headFormMode.value === "create";
-
-  try {
-    if (isCreate) {
-      await createCodeHead(headForm.value);
-    } else {
-      await updateCodeHead(
-        selectedCategory.value,
-        headForm.value.groupCode,
-        headForm.value,
-      );
-    }
-    toast.success(`그룹이 ${isCreate ? "생성" : "저장"}되었습니다.`);
-    await fetchHeads();
-    const newGroup = codeHeads.value.find(
-      (h) => h.groupCode === headForm.value.groupCode,
-    );
-    if (newGroup) selectGroup(newGroup);
-  } catch (error) {
-    const message = error.response?.data?.message || "저장 실패";
-    toast.error(`저장 실패: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const deleteHead = async (groupCode) => {
-  if (!confirm(`[${groupCode}] 그룹을 삭제하시겠습니까?`)) return;
-  try {
-    await deleteCodeHead(selectedCategory.value, groupCode);
-    toast.success("삭제되었습니다.");
-    fetchHeads();
-  } catch (error) {
-    const message = error.response?.data?.message || "삭제 실패";
-    toast.error(`삭제 실패: ${message}`);
-  }
-};
-
-const handleSaveItem = async ({ itemData, isCreate }) => {
-  if (!itemData.subCode) {
-    toast.warning("Sub Code is required.");
-    return;
-  }
-  isSubmitting.value = true;
-  const payload = {
-    ...itemData,
-    categoryCode: selectedCategory.value,
-    groupCode: selectedGroupCode.value,
-  };
-  try {
-    if (isCreate) {
-      await createCodeItem(payload);
-    } else {
-      await updateCodeItem(
-        selectedCategory.value,
-        selectedGroupCode.value,
-        itemData.subCode,
-        payload,
-      );
-    }
-    toast.success(`코드가 ${isCreate ? "생성" : "수정"}되었습니다.`);
-    await fetchItems(selectedGroupCode.value);
-  } catch (error) {
-    const message = error.response?.data?.message || "저장 실패";
-    toast.error(`저장 실패: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const deleteItem = async (item) => {
-  if (!confirm(`[${item.subCode}] 코드를 삭제하시겠습니까?`)) return;
-  try {
-    await deleteCodeItem(item.categoryCode, item.groupCode, item.subCode);
-    toast.success("삭제되었습니다.");
-    fetchItems(item.groupCode);
-  } catch (error) {
-    const message = error.response?.data?.message || "삭제 실패";
-    toast.error(`삭제 실패: ${message}`);
-  }
-};
-
-onMounted(fetchCategories);
+const {
+  categories,
+  selectedCategory,
+  codeHeads,
+  codeItems,
+  selectedGroupCode,
+  isSubmitting,
+  headFormMode,
+  needsInitialization,
+  headForm,
+  currentPage,
+  totalPages,
+  paginatedCodeHeads,
+  handleInitialize,
+  onCategoryChange,
+  selectGroup,
+  newHead,
+  saveHead,
+  deleteHead,
+  handleSaveItem,
+  deleteItem,
+} = useCodeManagement();
 </script>

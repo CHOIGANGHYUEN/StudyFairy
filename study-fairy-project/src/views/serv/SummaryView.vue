@@ -43,6 +43,7 @@ import ResultSection from "@/components/serv/ResultSection.vue";
 import TocSection from "@/components/serv/TocSection.vue";
 import FileSection from "@/components/serv/FileSection.vue";
 import { generateSummary } from "@/service/summaryService";
+import { useToast } from "@/composables/useToast";
 
 // 분리한 하위 컴포넌트 임포트
 
@@ -64,18 +65,19 @@ const error = ref(null);
 
 const authStore = useAuthStore();
 const router = useRouter();
+const toast = useToast();
 
 // --- 구글 드라이브 파일 픽커 로직 ---
 const openGoogleDrivePicker = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
   if (!apiKey) {
-    alert(
+    toast.warning(
       "Google Picker API 키가 필요합니다. .env 파일에 VITE_GOOGLE_API_KEY를 추가해주세요.",
     );
     return;
   }
   if (!authStore.accessToken) {
-    alert("구글 계정 로그인이 필요합니다.");
+    toast.warning("구글 계정 로그인이 필요합니다.");
     router.push("/login");
     return;
   }
@@ -101,7 +103,7 @@ const openGoogleDrivePicker = () => {
     script.defer = true;
     script.onload = initPicker;
     script.onerror = () =>
-      alert("Google Picker API 스크립트 로드에 실패했습니다.");
+      toast.error("Google Picker API 스크립트 로드에 실패했습니다.");
     document.head.appendChild(script);
   }
 };
@@ -172,11 +174,11 @@ const readFileContent = async () => {
 // --- 요약 실행 로직 ---
 const runSummary = async () => {
   if (selectedFiles.value.length === 0) {
-    alert("요약할 파일을 먼저 선택해주세요.");
+    toast.warning("요약할 파일을 먼저 선택해주세요.");
     return;
   }
   if (selectedTocItems.value.length === 0) {
-    alert("요약할 목차를 선택해주세요.");
+    toast.warning("요약할 목차를 선택해주세요.");
     return;
   }
 
@@ -190,7 +192,7 @@ const runSummary = async () => {
     await readFileContent();
 
     if (!allContent.value) {
-      alert("파일 내용이 비어있습니다.");
+      toast.warning("파일 내용이 비어있습니다.");
       isLoading.value = false;
       summaryLoading.value = false;
       return;
@@ -223,7 +225,7 @@ const runSummary = async () => {
 // --- 구글 독스 내보내기 로직 ---
 const exportToGoogleDocs = async (item) => {
   if (!item || !item.content) {
-    alert("내보낼 요약 결과가 없습니다.");
+    toast.warning("내보낼 요약 결과가 없습니다.");
     return;
   }
 
@@ -272,7 +274,7 @@ const exportToGoogleDocs = async (item) => {
     });
 
     const docUrl = `https://docs.google.com/document/d/${documentId}/edit`;
-    alert(`문서가 성공적으로 생성되었습니다! 링크: ${docUrl}`);
+    toast.success(`문서가 성공적으로 생성되었습니다! 링크: ${docUrl}`);
   } catch (err) {
     error.value =
       "Google Docs 내보내기 중 오류 발생: " +

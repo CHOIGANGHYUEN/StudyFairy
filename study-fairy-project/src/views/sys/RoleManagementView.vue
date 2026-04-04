@@ -37,97 +37,20 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useAuthStore } from "@/stores/useAuthStore";
-import {
-  getRoles,
-  createRole,
-  updateRole,
-  deleteRole,
-} from "@/service/roleService";
 import PageTitle from "@/components/PageTitle.vue";
 import RoleForm from "@/components/sys/role/RoleForm.vue";
 import RoleList from "@/components/sys/role/RoleList.vue";
-import { useToast } from "@/composables/useToast";
-
-const isSubmitting = ref(false);
-const isEditMode = ref(false);
-const editTargetId = ref(null);
-const roles = ref([]);
-
-const authStore = useAuthStore();
-const toast = useToast();
-
-const form = ref({
-  roleId: "",
-  description: "",
-  useYn: 1,
-});
-
-onMounted(() => {
-  fetchRoles();
-});
-
-const fetchRoles = async () => {
-  try {
-    const response = await getRoles();
-    roles.value = response.data;
-  } catch (error) {
-    console.error("권한 목록 조회 에러:", error);
-  }
-};
-
-const handleSubmit = async () => {
-  if (!form.value.roleId) return;
-  isSubmitting.value = true;
-  try {
-    const payload = {
-      roleId: form.value.roleId,
-      description: form.value.description,
-      useYn: form.value.useYn,
-      createdBy: authStore.user?.userid || "SYSTEM",
-      changedBy: authStore.user?.userid || "SYSTEM",
-    };
-
-    if (isEditMode.value) {
-      await updateRole(editTargetId.value, payload);
-    } else {
-      await createRole(payload);
-    }
-
-    toast.success(
-      `권한이 성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`,
-    );
-    resetForm();
-    await fetchRoles(); // 목록 새로고침
-  } catch (error) {
-    const message = error.response?.data?.message || "작업에 실패했습니다.";
-    toast.error(`오류: ${message}`);
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const editRole = (role) => {
-  isEditMode.value = true;
-  editTargetId.value = role.id;
-  form.value = {
-    roleId: role.roleId,
-    description: role.description,
-    useYn: role.useYn,
-  };
-  window.scrollTo(0, 0);
-};
-
-const resetForm = () => {
-  isEditMode.value = false;
-  editTargetId.value = null;
-  form.value = {
-    roleId: "",
-    description: "",
-    useYn: 1,
-  };
-};
+import { useRoleManagement } from "@/composables/sys/role/useRoleManagement";
+const {
+  isSubmitting,
+  isEditMode,
+  roles,
+  form,
+  handleSubmit,
+  editRole,
+  deleteRole,
+  resetForm,
+} = useRoleManagement();
 </script>
 
 <style scoped>

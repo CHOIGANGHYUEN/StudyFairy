@@ -42,88 +42,18 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
-import { useAuthStore } from "@/stores/useAuthStore";
-import {
-  getLanguages,
-  createLanguage,
-  deleteLanguage,
-} from "@/service/languageService";
 import PageTitle from "@/components/PageTitle.vue";
 import LanguageForm from "@/components/sys/language/LanguageForm.vue";
 import LanguageList from "@/components/sys/language/LanguageList.vue";
 import Pagination from "@/components/Pagination.vue"; // 만들어진 컴포넌트 경로 (가정)
-import { useToast } from "@/composables/useToast";
+import { useLanguageManagement } from "@/composables/sys/language/useLanguageManagement";
 
-const isSubmitting = ref(false);
-const languages = ref([]);
-const authStore = useAuthStore();
-const toast = useToast();
-
-// 페이지네이션 상태
-const currentPage = ref(1);
-const itemsPerPage = ref(10); // 한 페이지당 항목 수
-
-const totalPages = computed(() => {
-  return Math.ceil(languages.value.length / itemsPerPage.value) || 1;
-});
-
-const paginatedLanguages = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage.value;
-  const end = start + itemsPerPage.value;
-  return languages.value.slice(start, end);
-});
-
-onMounted(() => {
-  fetchLanguages();
-});
-
-const fetchLanguages = async () => {
-  try {
-    const response = await getLanguages();
-    languages.value = response.data;
-    currentPage.value = 1; // 데이터 로드 후 1페이지로 초기화
-  } catch (error) {
-    console.error("언어 목록 조회 에러:", error);
-    toast.error("언어 목록을 불러오는 중 오류가 발생했습니다.");
-  }
-};
-
-const handleRegister = async (newLang) => {
-  isSubmitting.value = true;
-  try {
-    const registrationData = {
-      ...newLang,
-      createdBy: authStore.user?.userId || "ADMIN",
-    };
-    await createLanguage(registrationData);
-    toast.success("새로운 언어가 성공적으로 등록되었습니다.");
-    await fetchLanguages();
-  } catch (error) {
-    console.error("언어 등록 에러:", error);
-    if (error.response && error.response.status === 409) {
-      toast.warning("이미 존재하는 언어 코드입니다. 다른 코드를 입력해주세요.");
-    } else {
-      toast.error("언어 등록 중 오류가 발생했습니다.");
-    }
-  } finally {
-    isSubmitting.value = false;
-  }
-};
-
-const handleDelete = async (id) => {
-  if (!confirm("정말로 이 언어를 삭제하시겠습니까?")) return;
-
-  isSubmitting.value = true;
-  try {
-    await deleteLanguage(id);
-    toast.success("성공적으로 삭제되었습니다.");
-    await fetchLanguages();
-  } catch (error) {
-    console.error("언어 삭제 에러:", error);
-    toast.error("언어 삭제 중 오류가 발생했습니다.");
-  } finally {
-    isSubmitting.value = false;
-  }
-};
+const {
+  isSubmitting,
+  currentPage,
+  totalPages,
+  paginatedLanguages,
+  handleRegister,
+  handleDelete,
+} = useLanguageManagement();
 </script>

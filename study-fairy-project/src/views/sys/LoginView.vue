@@ -46,9 +46,11 @@ import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { loginWithGoogle } from "@/service/authService";
+import { useToast } from "@/composables/useToast";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 const isGoogleReady = ref(false);
 let tokenClient;
 
@@ -84,7 +86,7 @@ onMounted(() => {
               const message =
                 error.response?.data?.message ||
                 "로그인 처리 중 오류가 발생했습니다.";
-              alert(message);
+              toast.error(message);
             }
           }
         },
@@ -102,7 +104,7 @@ onMounted(() => {
     script.defer = true;
     script.onload = initGoogleLogin;
     script.onerror = () => {
-      alert(
+      toast.error(
         "구글 로그인 모듈을 불러오지 못했습니다. 인터넷 연결을 확인해주세요.",
       );
     };
@@ -114,7 +116,7 @@ const handleGoogleLogin = () => {
   if (tokenClient) {
     tokenClient.requestAccessToken();
   } else {
-    alert(
+    toast.warning(
       "구글 로그인 모듈이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.",
     );
   }

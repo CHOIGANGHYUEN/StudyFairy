@@ -165,6 +165,7 @@
 
 <script setup>
 import { ref, watch, computed } from "vue";
+import { useToast } from "@/composables/useToast";
 
 const props = defineProps({
   modelValue: Boolean,
@@ -177,6 +178,7 @@ const emit = defineEmits([
   "execute",
 ]);
 const selection = ref("CREATE_TABLE");
+const toast = useToast();
 
 const localDdl = computed({
   get: () => props.generatedDdl,
@@ -200,10 +202,10 @@ async function copyToClipboard() {
   if (!localDdl.value) return;
   try {
     await navigator.clipboard.writeText(localDdl.value);
-    alert("스크립트가 클립보드에 복사되었습니다.");
+    toast.success("스크립트가 클립보드에 복사되었습니다.");
   } catch (err) {
     console.error(err);
-    alert("클립보드 복사에 실패했습니다.");
+    toast.error("클립보드 복사에 실패했습니다.");
   }
 }
 </script>

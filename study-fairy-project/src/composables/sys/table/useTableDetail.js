@@ -4,11 +4,13 @@ import {
   saveTableSpec,
   deleteTableSpec as apiDeleteTableSpec,
 } from "@/service/tableService";
+import { useToast } from "../../useToast";
 
 export function useTableDetail(searchLangu, onReload) {
   const currentTable = ref(null);
   const isEditorLoading = ref(false);
   const isSaving = ref(false);
+  const toast = useToast();
 
   const ensureTranslations = (obj, defaultValues, key) => {
     if (!obj[key] || obj[key].length === 0) {
@@ -109,7 +111,7 @@ export function useTableDetail(searchLangu, onReload) {
         `'${table.tablen}' 상세 정보를 불러오지 못했습니다.`,
         error,
       );
-      alert("테이블 상세 정보를 불러오는 중 오류가 발생했습니다.");
+      toast.error("테이블 상세 정보를 불러오는 중 오류가 발생했습니다.");
     } finally {
       isEditorLoading.value = false;
     }
@@ -135,10 +137,10 @@ export function useTableDetail(searchLangu, onReload) {
         delete payload.tablex;
       }
       await saveTableSpec(payload);
-      alert("명세서가 성공적으로 저장되었습니다.");
+      toast.success("명세서가 성공적으로 저장되었습니다.");
       if (onReload) await onReload();
     } catch (error) {
-      alert("저장 중 오류가 발생했습니다.");
+      toast.error("저장 중 오류가 발생했습니다.");
       console.error(error);
     } finally {
       isSaving.value = false;

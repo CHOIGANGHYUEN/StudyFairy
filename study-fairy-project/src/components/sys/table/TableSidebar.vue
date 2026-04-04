@@ -186,4 +186,11 @@ function prevPage() {
   border-top: 1px solid var(--border-color);
   background: var(--bg-color-secondary);
 }
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+  }
+}
 </style>

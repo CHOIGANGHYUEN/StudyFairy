@@ -320,6 +320,7 @@
 import { ref, computed, watch, onMounted, nextTick } from "vue";
 import api from "@/service/api";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useToast } from "@/composables/useToast";
 
 const props = defineProps({
   visible: Boolean,
@@ -333,6 +334,7 @@ const props = defineProps({
 
 const emit = defineEmits(["close", "save-success", "save-keep-open"]);
 const authStore = useAuthStore();
+const toast = useToast();
 const isSubmitting = ref(false);
 const isCopyMode = ref(false); // 복사 모드 상태 추가
 const titleInputRef = ref(null); // 제목 입력칸 포커스를 위한 참조
@@ -452,7 +454,7 @@ const handleSwitchToCopy = () => {
 
 const executeSubmit = async (closeAfterSave = true) => {
   if (!props.scheduleId) {
-    alert("마스터 일정 ID가 없습니다. 화면을 새로고침 해주세요.");
+    toast.error("마스터 일정 ID가 없습니다. 화면을 새로고침 해주세요.");
     return;
   }
 
@@ -503,7 +505,7 @@ const executeSubmit = async (closeAfterSave = true) => {
     }
   } catch (error) {
     console.error("상세 일정 등록 오류:", error);
-    alert("등록 중 오류가 발생했습니다.");
+    toast.error("등록 중 오류가 발생했습니다.");
   } finally {
     isSubmitting.value = false;
   }
@@ -522,7 +524,7 @@ const handleDelete = async () => {
     emit("save-success");
   } catch (error) {
     console.error("상세 일정 삭제 오류:", error);
-    alert("삭제 중 오류가 발생했습니다.");
+    toast.error("삭제 중 오류가 발생했습니다.");
   } finally {
     isSubmitting.value = false;
   }

@@ -106,8 +106,10 @@ import ScheduleBoardView from "@/components/sch/ScheduleBoardView.vue";
 import { getCodeItems } from "@/service/codeService";
 import { getSchedules, getScheduleDetails } from "@/service/scheduleService";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useToast } from "@/composables/useToast";
 
 const authStore = useAuthStore();
+const toast = useToast();
 
 // --- View State ---
 const currentView = ref("calendar"); // 'calendar', 'board', 'both'
@@ -249,7 +251,7 @@ async function fetchScheduleDetails() {
 // Called when a date on the calendar is clicked
 function handleDateClick(arg) {
   if (!scheduleId.value) {
-    alert(
+    toast.warning(
       "이 월에 대한 마스터 일정이 없어 작업을 추가할 수 없습니다. 관리자에게 문의하세요.",
     );
     return;
@@ -270,7 +272,7 @@ function handleEventClick(arg) {
 // 게시판 뷰에서 '글쓰기' 버튼 클릭 시
 function handleNewPost() {
   if (!scheduleId.value) {
-    alert(
+    toast.warning(
       "이 월에 대한 마스터 일정이 없어 작업을 추가할 수 없습니다. 관리자에게 문의하세요.",
     );
     return;

@@ -208,9 +208,9 @@ export function useTableSql(currentTable, selectedDbms) {
         script: generatedDDL.value,
         scriptType: scriptType,
       });
-      alert("스크립트가 성공적으로 실행되어 DB에 반영되었습니다.");
+      toast.success("스크립트가 성공적으로 실행되어 DB에 반영되었습니다.");
     } catch (error) {
-      alert(
+      toast.error(
         "스크립트 실행 중 오류가 발생했습니다.\n" +
           (error.response?.data?.message || error.message),
       );

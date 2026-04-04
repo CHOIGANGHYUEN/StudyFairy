@@ -74,6 +74,7 @@ import FileUpload from "@/components/serv/pdf/FileUpload.vue";
 import PdfViewer from "@/components/serv/pdf/PdfViewer.vue";
 import AiPanel from "@/components/serv/pdf/AiPanel.vue";
 import MarkdownModal from "@/components/serv/pdf/MarkdownModal.vue";
+import { useToast } from "@/composables/useToast";
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -86,6 +87,7 @@ const selectedText = ref("");
 const isLoading = ref(false);
 const authStore = useAuthStore();
 const fileName = ref("");
+const toast = useToast();
 
 // 텍스트 추출/변환 관련 상태
 const isCopying = ref(false);
@@ -158,7 +160,7 @@ const loadPdf = async (data) => {
     currentPageNum.value = 1;
   } catch (err) {
     console.error("PDF 로드 오류:", err);
-    alert("PDF 파일을 불러오는 데 실패했습니다.");
+    toast.error("PDF 파일을 불러오는 데 실패했습니다.");
     pdfDocument.value = null;
   } finally {
     isLoading.value = false;
@@ -262,17 +264,17 @@ const showMarkdown = async () => {
 const copyMarkdownFromModal = () => {
   if (!markdownContent.value) return;
   navigator.clipboard.writeText(markdownContent.value);
-  alert("마크다운이 클립보드에 복사되었습니다.");
+  toast.success("마크다운이 클립보드에 복사되었습니다.");
 };
 
 const openGoogleDrivePicker = () => {
   const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
   if (!apiKey || apiKey === "YOUR_GOOGLE_API_KEY") {
-    alert("Google Picker API 키가 필요합니다.");
+    toast.warning("Google Picker API 키가 필요합니다.");
     return;
   }
   if (!authStore.accessToken) {
-    alert("Google Drive 연동을 위해 로그인이 필요합니다.");
+    toast.warning("Google Drive 연동을 위해 로그인이 필요합니다.");
     return;
   }
 
@@ -300,7 +302,7 @@ const openGoogleDrivePicker = () => {
     script.defer = true;
     script.onload = initPicker;
     script.onerror = () => {
-      alert("Google Picker API 스크립트 로드에 실패했습니다.");
+      toast.error("Google Picker API 스크립트 로드에 실패했습니다.");
       isLoading.value = false;
     };
     document.head.appendChild(script);
@@ -313,7 +315,7 @@ async function pickerCallback(data) {
     const fileId = doc.id;
 
     if (doc.mimeType !== "application/pdf") {
-      alert("PDF 파일만 선택할 수 있습니다.");
+      toast.warning("PDF 파일만 선택할 수 있습니다.");
       return;
     }
 
@@ -336,7 +338,7 @@ async function pickerCallback(data) {
       await loadPdf(new Uint8Array(arrayBuffer));
     } catch (error) {
       console.error("Google Drive 파일 처리 중 오류 발생:", error);
-      alert("Google Drive 파일 처리 중 오류가 발생했습니다.");
+      toast.error("Google Drive 파일 처리 중 오류가 발생했습니다.");
     }
   }
 }
