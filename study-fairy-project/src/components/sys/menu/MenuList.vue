@@ -125,11 +125,11 @@
               </template>
             </template>
           </template>
-           <tr v-if="paginatedMenus.length === 0">
-              <td colspan="6" class="empty-state">
-                등록된 메뉴 정보가 없습니다.
-              </td>
-            </tr>
+          <tr v-if="paginatedMenus.length === 0">
+            <td colspan="6" class="empty-state">
+              등록된 메뉴 정보가 없습니다.
+            </td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -151,13 +151,13 @@
 import Pagination from "@/components/Pagination.vue";
 
 defineProps({
-    paginatedMenus: Array,
-    expandedMenus: Array,
-    currentPage: Number,
-    totalPages: Number,
+  paginatedMenus: Array,
+  expandedMenus: Array,
+  currentPage: Number,
+  totalPages: Number,
 });
 
-const emit = defineEmits(['toggle', 'edit', 'delete', 'page-change']);
+const emit = defineEmits(["toggle", "edit", "delete", "page-change"]);
 </script>
 
 <style scoped>
@@ -201,17 +201,5 @@ const emit = defineEmits(['toggle', 'edit', 'delete', 'page-change']);
   cursor: pointer;
   font-size: 0.6rem;
   border-radius: 4px;
-}
-.pagination-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1.5rem 0;
-  border-top: 1px solid #e2e8f0;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
 }
 </style>

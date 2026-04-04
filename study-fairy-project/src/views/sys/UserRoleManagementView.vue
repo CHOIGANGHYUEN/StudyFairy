@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-container">
+  <div class="admin-container list-layout">
     <UserRoleForm
       :is-edit-mode="isEditMode"
       :is-submitting="isSubmitting"
@@ -9,16 +9,24 @@
       @reset="resetForm"
     />
 
-    <UserRoleList
-      :mappings="mappings"
-      :is-submitting="isSubmitting"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      :total-count="totalCount"
-      @edit="editMapping"
-      @delete="deleteMapping"
-      @page-change="handlePageChange"
-    />
+    <div class="card flex-1 flex flex-col min-h-0 mb-0">
+      <div class="overflow-y-auto flex-1 p-0">
+        <UserRoleList
+          :mappings="mappings"
+          :is-submitting="isSubmitting"
+          :total-count="totalCount"
+          @edit="editMapping"
+          @delete="deleteMapping"
+        />
+      </div>
+      <div class="border-t p-4 flex justify-center bg-white rounded-b-sm">
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @update:current-page="handlePageChange"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -34,6 +42,7 @@ import {
 } from "@/service/userRoleService";
 import UserRoleForm from "@/components/sys/userRole/UserRoleForm.vue";
 import UserRoleList from "@/components/sys/userRole/UserRoleList.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const authStore = useAuthStore();
 

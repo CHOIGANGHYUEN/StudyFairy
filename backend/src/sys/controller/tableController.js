@@ -2,8 +2,26 @@ const tableService = require("../service/tableService");
 
 exports.getTables = async (req, res, next) => {
   try {
-    const tables = await tableService.getTables();
+    const langu = req.query.langu || "KO";
+    const tables = await tableService.getTables(langu);
     res.status(200).json({ success: true, data: tables });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.getTableDetails = async (req, res, next) => {
+  try {
+    const { tablen } = req.params;
+    const langu = req.query.langu || "KO";
+    const tableDetail = await tableService.getTableDetails(tablen, langu);
+
+    if (!tableDetail) {
+      return res
+        .status(404)
+        .json({ success: false, message: "테이블 명세서를 찾을 수 없습니다." });
+    }
+    res.status(200).json({ success: true, data: tableDetail });
   } catch (error) {
     next(error);
   }
@@ -40,13 +58,13 @@ exports.deleteTableSpec = async (req, res, next) => {
 
 exports.executeScript = async (req, res, next) => {
   try {
-    const { tablen, script } = req.body;
+    const { tablen, script, scriptType } = req.body;
     if (!script) {
       return res
         .status(400)
         .json({ success: false, message: "실행할 스크립트가 없습니다." });
     }
-    const result = await tableService.executeScript(tablen, script);
+    const result = await tableService.executeScript(tablen, script, scriptType);
     res.status(200).json({
       success: true,
       data: result,

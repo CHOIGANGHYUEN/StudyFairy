@@ -66,36 +66,3 @@ function changePage(page) {
   }
 }
 </script>
-
-<style scoped>
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1.5rem;
-}
-.pagination-button {
-  margin: 0 0.25rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #dee2e6;
-  background-color: #fff;
-  color: #0d6efd;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border-radius: 6px;
-  min-width: 40px;
-}
-.pagination-button:disabled {
-  color: #6c757d;
-  cursor: not-allowed;
-  background-color: #f8f9fa;
-}
-.pagination-button:not(:disabled):hover {
-  background-color: #e9ecef;
-}
-.pagination-button.active {
-  background-color: #0d6efd;
-  color: #fff;
-  border-color: #0d6efd;
-}
-</style>

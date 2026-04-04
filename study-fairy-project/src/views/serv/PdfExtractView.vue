@@ -1,5 +1,5 @@
 <template>
-  <div class="pdf-extract-page">
+  <div class="list-layout">
     <PageTitle title="PDF 텍스트 추출 및 AI 질문">
       <template #subtitle>
         <p class="page-subtitle">
@@ -38,8 +38,8 @@
 
       <!-- Right Column: AI Interaction Panel -->
       <AiPanel
-        v.model:selectedModel="selectedModel"
-        v.model:geminiQuestion="geminiQuestion"
+        v-model:selectedModel="selectedModel"
+        v-model:geminiQuestion="geminiQuestion"
         :available-models="availableModels"
         :selected-text="selectedText"
         :gemini-is-loading="geminiIsLoading"
@@ -343,13 +343,6 @@ async function pickerCallback(data) {
 </script>
 
 <style scoped>
-.pdf-extract-page {
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 100px);
-  color: var(--text-color-primary);
-}
-
 /* --- Layout --- */
 .pdf-extract-layout {
   display: grid;

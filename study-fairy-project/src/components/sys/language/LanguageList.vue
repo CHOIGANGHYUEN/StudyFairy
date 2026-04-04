@@ -2,7 +2,7 @@
   <section class="card-section list-section">
     <div class="card-header list-header">
       <h2 class="section-title">지원 언어 목록</h2>
-      <span class="badge">{{ languages.length }}개 언어</span>
+      <span class="badge badge-cyan">{{ languages.length }}개 언어</span>
     </div>
 
     <div class="table-container">
@@ -62,31 +62,15 @@ const formatDate = (date) => {
   const d = new Date(date);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
     2,
-    "0"
+    "0",
   )}-${String(d.getDate()).padStart(2, "0")} ${String(d.getHours()).padStart(
     2,
-    "0"
+    "0",
   )}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 </script>
 
 <style scoped>
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.badge {
-  background-color: #ecfeff;
-  color: #0891b2;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.table-container {
-  overflow-x: auto;
-}
 .data-table tr:hover td {
   background-color: #f8fafc;
 }
@@ -98,10 +82,5 @@ const formatDate = (date) => {
   font-weight: 700;
   font-family: monospace;
   border: 1px solid #e2e8f0;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
 }
 </style>

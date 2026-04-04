@@ -1,4 +1,5 @@
 const { MatClass, MatClassx, sequelize } = require("../../index");
+const HttpError = require("../../../utils/HttpError");
 
 exports.getMatClasses = async (filters = {}) => {
   const where = {};
@@ -22,8 +23,7 @@ exports.createMatClass = async (data, userId) => {
     description,
   } = data;
 
-  const t = await sequelize.transaction();
-  try {
+  return await sequelize.transaction(async (t) => {
     const newMatClass = await MatClass.create(
       {
         company,
@@ -53,12 +53,8 @@ exports.createMatClass = async (data, userId) => {
       );
     }
 
-    await t.commit();
     return newMatClass;
-  } catch (error) {
-    await t.rollback();
-    throw error;
-  }
+  });
 };
 
 exports.updateMatClass = async (id, data, userId) => {
@@ -75,13 +71,10 @@ exports.updateMatClass = async (id, data, userId) => {
 
   const matClassRecord = await MatClass.findByPk(id);
   if (!matClassRecord) {
-    const error = new Error("자재 분류를 찾을 수 없습니다.");
-    error.statusCode = 404;
-    throw error;
+    throw new HttpError(404, "자재 분류를 찾을 수 없습니다.");
   }
 
-  const t = await sequelize.transaction();
-  try {
+  return await sequelize.transaction(async (t) => {
     await matClassRecord.update(
       {
         company,
@@ -114,24 +107,17 @@ exports.updateMatClass = async (id, data, userId) => {
       }
     }
 
-    await t.commit();
     return matClassRecord;
-  } catch (error) {
-    await t.rollback();
-    throw error;
-  }
+  });
 };
 
 exports.deleteMatClass = async (id) => {
-  const matClassRecord = await MatClass.findByPk(id);
-  if (!matClassRecord) {
-    const error = new Error("자재 분류를 찾을 수 없습니다.");
-    error.statusCode = 404;
-    throw error;
-  }
+  return await sequelize.transaction(async (t) => {
+    const matClassRecord = await MatClass.findByPk(id, { transaction: t });
+    if (!matClassRecord) {
+      throw new HttpError(404, "자재 분류를 찾을 수 없습니다.");
+    }
 
-  const t = await sequelize.transaction();
-  try {
     await MatClassx.destroy({
       where: {
         matClass: matClassRecord.matClass,
@@ -141,10 +127,6 @@ exports.deleteMatClass = async (id) => {
     });
 
     await matClassRecord.destroy({ transaction: t });
-    await t.commit();
     return { message: "자재 분류가 삭제되었습니다." };
-  } catch (error) {
-    await t.rollback();
-    throw error;
-  }
+  });
 };

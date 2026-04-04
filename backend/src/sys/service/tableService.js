@@ -6,6 +6,7 @@ const {
   TableIndex,
   TableIndexx,
   IndexField,
+  IndexFieldx,
   TableHistory,
   sequelize,
   Sequelize,
@@ -13,27 +14,110 @@ const {
 const tableSchemaHelper = require("../helper/tableSchemaHelper");
 const tableHistoryHelper = require("../helper/tableHistoryHelper");
 
-exports.getTables = async () => {
+exports.getTables = async (langu = "KO") => {
   const tables = await Table.findAll({
     include: [
-      { model: Tablex, as: "names" },
+      {
+        model: Tablex,
+        as: "names",
+        required: false,
+        on: {
+          tablen: Sequelize.col("Table.tablen"),
+          langu: langu,
+        },
+      },
       {
         model: Field,
-        as: "fields",
-        include: [{ model: Fieldx, as: "names" }],
+        as: "field",
+        required: false,
+        on: { tablen: Sequelize.col("Table.tablen") },
+        include: [
+          {
+            model: Fieldx,
+            as: "fieldx",
+            required: false,
+            on: {
+              [Sequelize.Op.and]: [
+                Sequelize.where(
+                  Sequelize.col("field->fieldx.tablen"),
+                  Sequelize.col("field.tablen"),
+                ),
+                Sequelize.where(
+                  Sequelize.col("field->fieldx.fieldn"),
+                  Sequelize.col("field.fieldn"),
+                ),
+                { langu: langu },
+              ],
+            },
+          },
+        ],
       },
       {
         model: TableIndex,
-        as: "indexes",
+        as: "tableindex",
+        required: false,
+        on: { tablen: Sequelize.col("Table.tablen") },
         include: [
-          { model: IndexField, as: "fields" },
-          { model: TableIndexx, as: "names" },
+          {
+            model: TableIndexx,
+            as: "tableindexx",
+            required: false,
+            on: {
+              [Sequelize.Op.and]: [
+                Sequelize.where(
+                  Sequelize.col("tableindex->tableindexx.tablen"),
+                  Sequelize.col("tableindex.tablen"),
+                ),
+                Sequelize.where(
+                  Sequelize.col("tableindex->tableindexx.indexn"),
+                  Sequelize.col("tableindex.indexn"),
+                ),
+                { langu: langu },
+              ],
+            },
+          },
+          // --- IndexField 조인 추가 ---
+          {
+            model: IndexField,
+            as: "fields",
+            required: false,
+            on: {
+              [Sequelize.Op.and]: [
+                Sequelize.where(
+                  Sequelize.col("tableindex->fields.tablen"),
+                  Sequelize.col("tableindex.tablen"),
+                ),
+                Sequelize.where(
+                  Sequelize.col("tableindex->fields.indexn"),
+                  Sequelize.col("tableindex.indexn"),
+                ),
+              ],
+            },
+            include: [
+              {
+                model: Field,
+                as: "field",
+                required: false,
+                on: {
+                  [Sequelize.Op.and]: [
+                    Sequelize.where(
+                      Sequelize.col("tableindex->fields->field.tablen"),
+                      Sequelize.col("tableindex->fields.tablen"),
+                    ),
+                    Sequelize.where(
+                      Sequelize.col("tableindex->fields->field.fieldn"),
+                      Sequelize.col("tableindex->fields.fieldn"),
+                    ),
+                  ],
+                },
+              },
+            ],
+          },
         ],
       },
     ],
     order: [["id", "ASC"]],
   });
-
   // 테이블 변경 이력 유무 파악 (순수 최초 생성 이외의 수정 이력이 존재하는지 확인)
   const modifiedHistories = await TableHistory.findAll({
     attributes: ["tablen"],
@@ -55,26 +139,143 @@ exports.getTables = async () => {
   });
 };
 
+exports.getTableDetails = async (tablen, langu = "KO") => {
+  return await Table.findOne({
+    where: { tablen },
+    order: [
+      [{ model: Field, as: "field" }, "fieldOrder", "ASC"],
+      [{ model: TableIndex, as: "tableindex" }, "id", "ASC"],
+      [
+        { model: TableIndex, as: "tableindex" },
+        { model: IndexField, as: "fields" },
+        "fieldOrder",
+        "ASC",
+      ],
+    ],
+    include: [
+      {
+        model: Tablex,
+        as: "names",
+        required: false,
+        where: { langu: langu },
+      },
+      {
+        model: Field,
+        as: "field",
+        required: false,
+        include: [
+          {
+            model: Fieldx,
+            as: "fieldx",
+            required: false,
+            on: {
+              [Sequelize.Op.and]: [
+                Sequelize.where(
+                  Sequelize.col("field->fieldx.tablen"),
+                  Sequelize.col("field.tablen"),
+                ),
+                Sequelize.where(
+                  Sequelize.col("field->fieldx.fieldn"),
+                  Sequelize.col("field.fieldn"),
+                ),
+                { langu: langu },
+              ],
+            },
+          },
+        ],
+      },
+      {
+        model: TableIndex,
+        as: "tableindex",
+        required: false,
+        include: [
+          {
+            model: IndexField,
+            as: "fields",
+            required: false,
+            on: {
+              [Sequelize.Op.and]: [
+                Sequelize.where(
+                  Sequelize.col("tableindex->fields.tablen"),
+                  Sequelize.col("tableindex.tablen"),
+                ),
+                Sequelize.where(
+                  Sequelize.col("tableindex->fields.indexn"),
+                  Sequelize.col("tableindex.indexn"),
+                ),
+              ],
+            },
+            include: [
+              {
+                model: Field,
+                as: "field",
+                required: false,
+                on: {
+                  [Sequelize.Op.and]: [
+                    Sequelize.where(
+                      Sequelize.col("tableindex->fields->field.tablen"),
+                      Sequelize.col("tableindex->fields.tablen"),
+                    ),
+                    Sequelize.where(
+                      Sequelize.col("tableindex->fields->field.fieldn"),
+                      Sequelize.col("tableindex->fields.fieldn"),
+                    ),
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            model: TableIndexx,
+            as: "tableindexx",
+            required: false,
+            on: {
+              [Sequelize.Op.and]: [
+                Sequelize.where(
+                  Sequelize.col("tableindex->tableindexx.tablen"),
+                  Sequelize.col("tableindex.tablen"),
+                ),
+                Sequelize.where(
+                  Sequelize.col("tableindex->tableindexx.indexn"),
+                  Sequelize.col("tableindex.indexn"),
+                ),
+                { langu: langu },
+              ],
+            },
+          },
+        ],
+      },
+    ],
+  });
+};
+
 exports.saveTableSpec = async (tableData, userId) => {
-  const { tablen, module, names, fields, indexes } = tableData;
+  const { tablen, module, field, tableindex } = tableData;
+  const tablex = tableData.names || tableData.tablex;
 
   // 변경 이력 추적을 위해 저장 전 기존 데이터를 조회합니다.
   const oldTable = await Table.findOne({
     where: { tablen },
     include: [
       { model: Tablex, as: "names" },
-      { model: Field, as: "fields", include: [{ model: Fieldx, as: "names" }] },
+      { model: Field, as: "field", include: [{ model: Fieldx, as: "fieldx" }] },
       {
         model: TableIndex,
-        as: "indexes",
+        as: "tableindex",
         include: [
           { model: IndexField, as: "fields" },
-          { model: TableIndexx, as: "names" },
+          { model: TableIndexx, as: "tableindexx" },
         ],
       },
     ],
   });
   const oldTableJson = oldTable ? oldTable.get({ plain: true }) : null;
+
+  // 기존 로직(이력 기록 등)과의 호환성을 위해 names를 tablex로 매핑
+  if (oldTableJson && oldTableJson.names) {
+    oldTableJson.tablex = oldTableJson.names;
+    delete oldTableJson.names;
+  }
 
   const t = await sequelize.transaction();
 
@@ -92,8 +293,8 @@ exports.saveTableSpec = async (tableData, userId) => {
     );
 
     // 2. Table 다국어 명칭
-    if (names && names.length > 0) {
-      for (const name of names) {
+    if (tablex && tablex.length > 0) {
+      for (const name of tablex) {
         await Tablex.upsert(
           {
             langu: name.langu,
@@ -110,36 +311,36 @@ exports.saveTableSpec = async (tableData, userId) => {
     }
 
     // 3. Fields 처리 (기존 항목 중 삭제된 것 처리 로직 필요 시 추가)
-    if (fields && fields.length > 0) {
-      for (const field of fields) {
+    if (field && field.length > 0) {
+      for (const fItem of field) {
         await Field.upsert(
           {
-            id: field.id,
+            id: fItem.id,
             tablen,
-            fieldn: field.fieldn,
+            fieldn: fItem.fieldn,
             module,
-            fieldOrder: field.fieldOrder,
-            fieldType: field.fieldType,
-            fieldLength: field.fieldLength,
-            fieldPoint: field.fieldPoint,
-            isNull: field.isNull,
-            isAutoIncrement: field.isAutoIncrement,
-            isUnique: field.isUnique,
-            isNonUnique: field.isNonUnique,
-            fieldKey: field.fieldKey,
+            fieldOrder: fItem.fieldOrder,
+            fieldType: fItem.fieldType,
+            fieldLength: fItem.fieldLength,
+            fieldPoint: fItem.fieldPoint,
+            isNull: fItem.isNull,
+            isAutoIncrement: fItem.isAutoIncrement,
+            isUnique: fItem.isUnique,
+            isNonUnique: fItem.isNonUnique,
+            fieldKey: fItem.fieldKey,
             createdBy: userId,
             changedBy: userId,
           },
           { transaction: t },
         );
 
-        if (field.names && field.names.length > 0) {
-          for (const fname of field.names) {
+        if (fItem.fieldx && fItem.fieldx.length > 0) {
+          for (const fname of fItem.fieldx) {
             await Fieldx.upsert(
               {
                 langu: fname.langu,
                 tablen,
-                fieldn: field.fieldn,
+                fieldn: fItem.fieldn,
                 module,
                 fieldNm: fname.fieldNm,
                 description: fname.description,
@@ -154,8 +355,8 @@ exports.saveTableSpec = async (tableData, userId) => {
     }
 
     // 4. Indexes 및 IndexFields 처리
-    if (indexes && indexes.length > 0) {
-      for (const idx of indexes) {
+    if (tableindex && tableindex.length > 0) {
+      for (const idx of tableindex) {
         await TableIndex.upsert(
           {
             tablen,
@@ -168,8 +369,8 @@ exports.saveTableSpec = async (tableData, userId) => {
           { transaction: t },
         );
 
-        if (idx.names && idx.names.length > 0) {
-          for (const iname of idx.names) {
+        if (idx.tableindexx && idx.tableindexx.length > 0) {
+          for (const iname of idx.tableindexx) {
             await TableIndexx.upsert(
               {
                 langu: iname.langu,
@@ -208,8 +409,8 @@ exports.saveTableSpec = async (tableData, userId) => {
 
     // 5. 누락된(화면에서 삭제된) 필드 및 인덱스 물리적 삭제 처리
     if (oldTableJson) {
-      const newFieldNames = (fields || []).map((f) => f.fieldn);
-      const fieldsToDelete = oldTableJson.fields.filter(
+      const newFieldNames = (field || []).map((f) => f.fieldn);
+      const fieldsToDelete = (oldTableJson.field || []).filter(
         (f) => !newFieldNames.includes(f.fieldn),
       );
       for (const f of fieldsToDelete) {
@@ -223,11 +424,17 @@ exports.saveTableSpec = async (tableData, userId) => {
         });
       }
 
-      const newIndexNames = (indexes || []).map((idx) => idx.indexn);
-      const indexesToDelete = oldTableJson.indexes.filter(
+      const newIndexNames = (tableindex || []).map((idx) => idx.indexn);
+      const indexesToDelete = (oldTableJson.tableindex || []).filter(
         (idx) => !newIndexNames.includes(idx.indexn),
       );
       for (const idx of indexesToDelete) {
+        if (IndexFieldx) {
+          await IndexFieldx.destroy({
+            where: { tablen, indexn: idx.indexn },
+            transaction: t,
+          });
+        }
         await IndexField.destroy({
           where: { tablen, indexn: idx.indexn },
           transaction: t,
@@ -242,16 +449,22 @@ exports.saveTableSpec = async (tableData, userId) => {
         });
       }
 
-      for (const idx of indexes || []) {
-        const oldIdx = oldTableJson.indexes.find(
+      for (const idx of tableindex || []) {
+        const oldIdx = (oldTableJson.tableindex || []).find(
           (i) => i.indexn === idx.indexn,
         );
         if (oldIdx) {
           const newIfNames = (idx.fields || []).map((f) => f.fieldn);
-          const ifToDelete = oldIdx.fields.filter(
+          const ifToDelete = (oldIdx.fields || []).filter(
             (f) => !newIfNames.includes(f.fieldn),
           );
           for (const f of ifToDelete) {
+            if (IndexFieldx) {
+              await IndexFieldx.destroy({
+                where: { tablen, indexn: idx.indexn, fieldn: f.fieldn },
+                transaction: t,
+              });
+            }
             await IndexField.destroy({
               where: { tablen, indexn: idx.indexn, fieldn: f.fieldn },
               transaction: t,
@@ -282,24 +495,33 @@ exports.deleteTableSpec = async (tablen, userId = "SYSTEM") => {
     where: { tablen },
     include: [
       { model: Tablex, as: "names" },
-      { model: Field, as: "fields", include: [{ model: Fieldx, as: "names" }] },
+      { model: Field, as: "field", include: [{ model: Fieldx, as: "fieldx" }] },
       {
         model: TableIndex,
-        as: "indexes",
+        as: "tableindex",
         include: [
           { model: IndexField, as: "fields" },
-          { model: TableIndexx, as: "names" },
+          { model: TableIndexx, as: "tableindexx" },
         ],
       },
     ],
   });
   const oldTableJson = oldTable ? oldTable.get({ plain: true }) : null;
 
+  // 기존 로직(이력 기록 등)과의 호환성을 위해 names를 tablex로 매핑
+  if (oldTableJson && oldTableJson.names) {
+    oldTableJson.tablex = oldTableJson.names;
+    delete oldTableJson.names;
+  }
+
   const t = await sequelize.transaction();
   try {
     // 연관된 모든 데이터 삭제
     await Fieldx.destroy({ where: { tablen }, transaction: t });
     await Field.destroy({ where: { tablen }, transaction: t });
+    if (IndexFieldx) {
+      await IndexFieldx.destroy({ where: { tablen }, transaction: t });
+    }
     await IndexField.destroy({ where: { tablen }, transaction: t });
     await TableIndexx.destroy({ where: { tablen }, transaction: t });
     await TableIndex.destroy({ where: { tablen }, transaction: t });
@@ -321,7 +543,7 @@ exports.deleteTableSpec = async (tablen, userId = "SYSTEM") => {
   }
 };
 
-exports.executeScript = async (tablen, script) => {
+exports.executeScript = async (tablen, script, scriptType) => {
   // 여러 세미콜론(;)으로 분리된 다중 쿼리 실행을 위한 로직
   const queries = script
     .split(";")
@@ -345,20 +567,36 @@ exports.executeScript = async (tablen, script) => {
         throw err;
       }
     }
-    
+
     if (tablen) {
+      let targetTypeQuery = "";
+      if (scriptType === "ALTER_TABLE") {
+        targetTypeQuery = " AND targetType IN ('TABLE', 'FIELD')";
+      } else if (scriptType === "ALTER_INDEX") {
+        targetTypeQuery = " AND targetType IN ('INDEX', 'INDEX_FIELD')";
+      }
+
       try {
-        await sequelize.query(`UPDATE sysTableHistory SET isApplied = 1 WHERE tablen = :tablen AND isApplied = 0`, { 
-          replacements: { tablen },
-          transaction: t 
-        });
-      } catch(err) {
+        await sequelize.query(
+          `UPDATE sysTableHistory SET isApplied = 1 WHERE tablen = :tablen AND isApplied = 0${targetTypeQuery}`,
+          {
+            replacements: { tablen },
+            transaction: t,
+          },
+        );
+      } catch (err) {
         // 만약 isApplied 컬럼이 없다면 추가하고 재시도
-        await sequelize.query(`ALTER TABLE sysTableHistory ADD COLUMN isApplied TINYINT(1) DEFAULT 0`, { transaction: t });
-        await sequelize.query(`UPDATE sysTableHistory SET isApplied = 1 WHERE tablen = :tablen`, { 
-          replacements: { tablen },
-          transaction: t 
-        });
+        await sequelize.query(
+          `ALTER TABLE sysTableHistory ADD COLUMN isApplied TINYINT(1) DEFAULT 0`,
+          { transaction: t },
+        );
+        await sequelize.query(
+          `UPDATE sysTableHistory SET isApplied = 1 WHERE tablen = :tablen AND isApplied = 0${targetTypeQuery}`,
+          {
+            replacements: { tablen },
+            transaction: t,
+          },
+        );
       }
     }
 

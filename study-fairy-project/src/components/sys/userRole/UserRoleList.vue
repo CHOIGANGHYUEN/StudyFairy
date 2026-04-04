@@ -2,7 +2,7 @@
   <section class="card-section list-section">
     <div class="card-header list-header">
       <h2 class="section-title">등록된 사용자-권한 목록</h2>
-      <span class="badge">{{ totalCount }}건</span>
+      <span class="badge badge-blue">{{ totalCount }}건</span>
     </div>
     <div class="table-container">
       <table class="data-table">
@@ -98,41 +98,13 @@ const formatDate = (dateString) => {
 </script>
 
 <style scoped>
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.badge {
-  background-color: #dbeafe;
-  color: #1e40af;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.table-container {
-  overflow-x: auto;
-}
 .data-table tr:hover td {
   background-color: #f8fafc;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
 }
 .text-purple-700 {
   color: #7e22ce;
 }
 .text-blue-700 {
   color: #1d4ed8;
-}
-.pagination-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1.5rem 0;
-  border-top: 1px solid #e2e8f0;
 }
 </style>

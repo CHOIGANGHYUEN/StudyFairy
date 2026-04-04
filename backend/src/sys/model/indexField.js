@@ -4,9 +4,12 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class IndexField extends Model {
     static associate(models) {
-      IndexField.belongsTo(models.TableIndex, {
-        foreignKey: "indexn",
-        targetKey: "indexn",
+      // IndexField (N) : Field (1)
+      // tablen과 fieldn 두 개를 모두 매칭시켜야 함
+      IndexField.belongsTo(models.Field, {
+        foreignKey: "fieldn", // 대표 외래키
+        targetKey: "fieldn",
+        as: "field",
       });
     }
   }

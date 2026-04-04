@@ -1,9 +1,10 @@
 import { createRouter, createWebHistory } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
+import api from "@/service/api";
 import HomeView from "@/views/home/HomeView.vue";
 import LoginView from "@/views/sys/LoginView.vue";
 // ... (other imports)
-import SummaryView from "../views/serv/SummaryView.vue";
+import SummaryView from "@/views/serv/SummaryView.vue";
 import EmptyView from "@/views/EmptyView.vue";
 import UserManagementView from "@/views/sys/UserManagementView.vue";
 import MenuManagementView from "@/views/sys/MenuManagementView.vue";
@@ -16,7 +17,6 @@ import MenuRoleManagementView from "@/views/sys/MenuRoleManagementView.vue";
 import RoleMainManagementView from "@/views/sys/RoleMainManagementView.vue";
 import ScheduleManagementView from "@/views/sys/ScheduleManagementView.vue";
 import ScheduleCalendarView from "@/views/sch/ScheduleCalendarView.vue";
-import api from "@/service/api";
 import UnitManagementView from "@/views/erp/com/UnitManagementView.vue";
 import CompanyManagementView from "@/views/erp/com/CompanyManagementView.vue";
 import MatTypeManagementView from "@/views/erp/com/MatTypeManagementView.vue";
@@ -24,8 +24,6 @@ import MatClassManagementView from "@/views/erp/com/MatClassManagementView.vue";
 import TableManagementView from "@/views/sys/TableManagementView.vue";
 import TableHistoryView from "@/views/log/history/TableHistoryView.vue";
 import PdfExtractView from "@/views/serv/PdfExtractView.vue";
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
 
 const routes = [
   {
@@ -134,8 +132,6 @@ const routes = [
     name: "table-history",
     component: TableHistoryView,
   },
-  // src/router/index.js (또는 관련 라우터 설정 파일) 내부의 routes 배열에 추가
-
   {
     path: "/pdf",
     name: "PdfExtract",

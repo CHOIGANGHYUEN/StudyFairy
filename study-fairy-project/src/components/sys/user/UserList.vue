@@ -2,7 +2,7 @@
   <section class="card-section list-section">
     <div class="card-header list-header">
       <h2 class="section-title">등록된 사용자 목록</h2>
-      <span class="badge">{{ users.length }}명</span>
+      <span class="badge badge-blue">{{ users.length }}명</span>
     </div>
     <div class="table-container">
       <table class="data-table">
@@ -42,27 +42,6 @@ const formatDate = (date) => {
 </script>
 
 <style scoped>
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.badge {
-  background-color: #dbeafe;
-  color: #1e40af;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.table-container {
-  overflow-x: auto;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
-}
 .data-table tr:hover td {
   background-color: #f8fafc;
 }

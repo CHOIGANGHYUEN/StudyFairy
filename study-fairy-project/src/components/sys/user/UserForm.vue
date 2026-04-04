@@ -40,11 +40,3 @@ const submitForm = () => {
   localUserId.value = "";
 };
 </script>
-
-<style scoped>
-.input-hint {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin-top: 0.4rem;
-}
-</style>

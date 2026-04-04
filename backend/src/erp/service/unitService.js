@@ -1,5 +1,6 @@
-const { Unit, Sequelize } = require("../../index");
+const { Unit, Sequelize, sequelize } = require("../../index");
 const { Op } = Sequelize;
+const HttpError = require("../../../utils/HttpError");
 
 // 모든 단위 조회
 exports.getUnits = async () => {
@@ -12,9 +13,7 @@ exports.getUnits = async () => {
 exports.getUnitById = async (id) => {
   const unit = await Unit.findByPk(id);
   if (!unit) {
-    const error = new Error("단위를 찾을 수 없습니다.");
-    error.statusCode = 404;
-    throw error;
+    throw new HttpError(404, "단위를 찾을 수 없습니다.");
   }
   return unit;
 };
@@ -23,73 +22,66 @@ exports.getUnitById = async (id) => {
 exports.createUnit = async (unitData) => {
   const { unit, unitNm, baseUnitYn } = unitData;
   if (!unit || !unitNm || baseUnitYn === null || baseUnitYn === undefined) {
-    const error = new Error("단위 ID, 단위명, 기본 단위 여부는 필수입니다.");
-    error.statusCode = 400;
-    throw error;
+    throw new HttpError(400, "단위 ID, 단위명, 기본 단위 여부는 필수입니다.");
   }
 
-  try {
-    const newUnit = await Unit.create(unitData);
-    return {
-      message: "성공적으로 등록되었습니다.",
-      insertId: newUnit.id,
-    };
-  } catch (err) {
-    if (err instanceof Sequelize.UniqueConstraintError) {
-      const error = new Error("이미 존재하는 단위 ID입니다.");
-      error.statusCode = 409;
-      throw error;
-    }
-    throw err;
-  }
+  return await sequelize
+    .transaction(async (t) => {
+      const newUnit = await Unit.create(unitData, { transaction: t });
+      return { message: "성공적으로 등록되었습니다.", insertId: newUnit.id };
+    })
+    .catch((err) => {
+      if (err instanceof Sequelize.UniqueConstraintError) {
+        throw new HttpError(409, "이미 존재하는 단위 ID입니다.");
+      }
+      throw err;
+    });
 };
 
 // 단위 수정
 exports.updateUnit = async (id, unitData) => {
   const { unit, unitNm, baseUnitYn } = unitData;
   if (!unit || !unitNm || baseUnitYn === null || baseUnitYn === undefined) {
-    const error = new Error("단위 ID, 단위명, 기본 단위 여부는 필수입니다.");
-    error.statusCode = 400;
-    throw error;
+    throw new HttpError(400, "단위 ID, 단위명, 기본 단위 여부는 필수입니다.");
   }
 
-  // Check for duplicate unit
-  const existingUnit = await Unit.findOne({
-    where: {
-      unit: unit,
-      id: { [Op.ne]: id }, // Exclude the current unit being updated
-    },
+  return await sequelize.transaction(async (t) => {
+    const existingUnit = await Unit.findOne({
+      where: {
+        unit: unit,
+        id: { [Op.ne]: id },
+      },
+      transaction: t,
+    });
+
+    if (existingUnit) {
+      throw new HttpError(409, "이미 존재하는 단위 ID입니다.");
+    }
+
+    const [affectedRows] = await Unit.update(unitData, {
+      where: { id },
+      transaction: t,
+    });
+
+    if (affectedRows === 0) {
+      throw new HttpError(404, "수정할 단위를 찾을 수 없습니다.");
+    }
+
+    return { message: "성공적으로 수정되었습니다." };
   });
-
-  if (existingUnit) {
-    const error = new Error("이미 존재하는 단위 ID입니다.");
-    error.statusCode = 409;
-    throw error;
-  }
-
-  const [affectedRows] = await Unit.update(unitData, {
-    where: { id },
-  });
-
-  if (affectedRows === 0) {
-    const error = new Error("수정할 단위를 찾을 수 없습니다.");
-    error.statusCode = 404;
-    throw error;
-  }
-
-  return { message: "성공적으로 수정되었습니다." };
 };
 
 // 단위 삭제
 exports.deleteUnit = async (id) => {
-  const affectedRows = await Unit.destroy({
-    where: { id },
-  });
+  return await sequelize.transaction(async (t) => {
+    const affectedRows = await Unit.destroy({
+      where: { id },
+      transaction: t,
+    });
 
-  if (affectedRows === 0) {
-    const error = new Error("삭제할 단위를 찾을 수 없습니다.");
-    error.statusCode = 404;
-    throw error;
-  }
-  return { message: "성공적으로 삭제되었습니다." };
+    if (affectedRows === 0) {
+      throw new HttpError(404, "삭제할 단위를 찾을 수 없습니다.");
+    }
+    return { message: "성공적으로 삭제되었습니다." };
+  });
 };

@@ -1,16 +1,13 @@
 <template>
   <div class="admin-container">
     <h1>문서 요약 서비스</h1>
-    <p v-if="error" style="color: red">오류: {{ error }}</p>
+    <p v-if="error" class="text-danger font-bold mb-4">오류: {{ error }}</p>
 
-    <!-- 1. 파일 선택 영역 -->
     <FileSection
       v-model:selectedFiles="selectedFiles"
       :isLoading="isLoading"
       @open-drive="openGoogleDrivePicker"
     />
-
-    <!-- 2. 목차 직접 입력 및 선택 영역 -->
     <TocSection
       v-model:toc="toc"
       v-model:selectedTocItems="selectedTocItems"

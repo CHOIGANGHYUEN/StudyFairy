@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-container">
+  <div class="admin-container list-layout">
     <PageTitle>
       <template #icon>
         <svg
@@ -29,16 +29,24 @@
       @reset="resetForm"
     />
 
-    <MenuList
-      :paginated-menus="paginatedMenus"
-      :expanded-menus="expandedMenus"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      @toggle="toggleMenu"
-      @edit="editMenu"
-      @delete="deleteMenu"
-      @page-change="handlePageChange"
-    />
+    <div class="card flex-1 flex flex-col min-h-0 mb-0">
+      <div class="overflow-y-auto flex-1 p-0">
+        <MenuList
+          :paginated-menus="paginatedMenus"
+          :expanded-menus="expandedMenus"
+          @toggle="toggleMenu"
+          @edit="editMenu"
+          @delete="deleteMenu"
+        />
+      </div>
+      <div class="border-t p-4 flex justify-center bg-white rounded-b-sm">
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @update:current-page="handlePageChange"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -54,6 +62,7 @@ import {
 import PageTitle from "@/components/PageTitle.vue";
 import MenuForm from "@/components/sys/menu/MenuForm.vue";
 import MenuList from "@/components/sys/menu/MenuList.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);

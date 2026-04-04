@@ -2,7 +2,7 @@
   <section class="card-section list-section">
     <div class="card-header list-header">
       <h2 class="section-title">등록된 회사 목록</h2>
-      <span class="badge">{{ companies.length }}개</span>
+      <span class="badge badge-purple">{{ companies.length }}개</span>
     </div>
     <div class="table-container">
       <table class="data-table">
@@ -83,29 +83,8 @@ const emit = defineEmits(["edit", "delete"]);
 </script>
 
 <style scoped>
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.badge {
-  background-color: #f3e8ff;
-  color: #7e22ce;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.table-container {
-  overflow-x: auto;
-}
 .data-table tr:hover td {
   background-color: #f8fafc;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
 }
 .lang-name-pair {
   display: flex;

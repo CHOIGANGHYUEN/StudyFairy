@@ -132,7 +132,7 @@
             닫기
           </button>
           <button
-            @click="$emit('execute')"
+            @click="$emit('execute', selection)"
             class="btn btn-danger"
             :disabled="!localDdl"
           >

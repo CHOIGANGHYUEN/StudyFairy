@@ -7,6 +7,9 @@ module.exports = (sequelize, DataTypes) => {
       TableIndexx.belongsTo(models.TableIndex, {
         foreignKey: "indexn",
         targetKey: "indexn",
+        scope: {
+          langu: "KO",
+        },
       });
     }
   }

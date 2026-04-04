@@ -29,13 +29,13 @@
           />
         </div>
       </div>
-       <div class="p-4 border-t border-slate-200">
+      <div class="p-4 border-t border-slate-200">
         <button
-            type="submit"
-            class="btn btn-primary w-full"
-            :disabled="isSubmitting || !isValid"
+          type="submit"
+          class="btn btn-primary w-full"
+          :disabled="isSubmitting || !isValid"
         >
-            {{ isSubmitting ? "처리 중..." : "언어 등록" }}
+          {{ isSubmitting ? "처리 중..." : "언어 등록" }}
         </button>
       </div>
     </form>
@@ -43,47 +43,42 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed } from "vue";
 
 defineProps({
   isSubmitting: Boolean,
 });
 
-const emit = defineEmits(['register']);
+const emit = defineEmits(["register"]);
 
 const newLang = ref({
-  langu: '',
-  languNm: '',
+  langu: "",
+  languNm: "",
 });
 
 const isValid = computed(() => {
   return (
-    newLang.value.langu.trim() !== '' && newLang.value.languNm.trim() !== ''
+    newLang.value.langu.trim() !== "" && newLang.value.languNm.trim() !== ""
   );
 });
 
 const handleRegister = () => {
   if (isValid.value) {
-    emit('register', { ...newLang.value });
+    emit("register", { ...newLang.value });
     // Reset form after emitting
-    newLang.value = { langu: '', languNm: '' };
+    newLang.value = { langu: "", languNm: "" };
   }
 };
 </script>
 
 <style scoped>
-.input-hint {
-  font-size: 0.75rem;
-  color: #94a3b8;
-  margin-top: 0.4rem;
-}
 .border-t {
-    border-top-width: 1px;
+  border-top-width: 1px;
 }
 .border-slate-200 {
-    border-color: #e2e8f0;
+  border-color: #e2e8f0;
 }
 .p-4 {
-    padding: 1rem;
+  padding: 1rem;
 }
 </style>

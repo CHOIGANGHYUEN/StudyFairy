@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       TableIndex.hasMany(models.TableIndexx, {
         foreignKey: "indexn",
         sourceKey: "indexn",
-        as: "names",
+        as: "tableindexx",
       });
       TableIndex.hasMany(models.IndexField, {
         foreignKey: "indexn",

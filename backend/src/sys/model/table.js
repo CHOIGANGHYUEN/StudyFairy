@@ -12,12 +12,12 @@ module.exports = (sequelize, DataTypes) => {
       Table.hasMany(models.Field, {
         foreignKey: "tablen",
         sourceKey: "tablen",
-        as: "fields",
+        as: "field",
       });
       Table.hasMany(models.TableIndex, {
         foreignKey: "tablen",
         sourceKey: "tablen",
-        as: "indexes",
+        as: "tableindex",
       });
     }
   }

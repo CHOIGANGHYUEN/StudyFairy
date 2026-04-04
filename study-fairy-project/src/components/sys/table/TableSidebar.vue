@@ -14,7 +14,7 @@
     </button>
     <ul class="table-list">
       <li
-        v-for="table in filteredTables"
+        v-for="table in paginatedTables"
         :key="table.tablen"
         @click="$emit('select', table)"
         :class="{ active: currentTableId === table.tablen }"
@@ -40,6 +40,30 @@
         </span>
       </li>
     </ul>
+
+    <!-- 하단 페이지네이션 컨트롤 -->
+    <div
+      v-if="totalPages > 1"
+      class="pagination flex justify-between items-center p-3 mt-auto"
+    >
+      <button
+        @click="prevPage"
+        :disabled="currentPage === 1"
+        class="btn btn-sm btn-outline text-xs px-2 py-1"
+      >
+        이전
+      </button>
+      <span class="text-xs font-bold"
+        >{{ currentPage }} / {{ totalPages }}</span
+      >
+      <button
+        @click="nextPage"
+        :disabled="currentPage === totalPages"
+        class="btn btn-sm btn-outline text-xs px-2 py-1"
+      >
+        다음
+      </button>
+    </div>
   </div>
 </template>
 

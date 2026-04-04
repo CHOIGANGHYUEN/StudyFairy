@@ -1,23 +1,9 @@
-import api from "./api";
+import api from "@/service/api";
 
 const BASE_URL = "/mat-types";
 
-export const getMatTypes = (params) => {
-  return api.get(BASE_URL, { params });
-};
-
-export const getMatTypeById = (id) => {
-  return api.get(`${BASE_URL}/${id}`);
-};
-
-export const createMatType = (data) => {
-  return api.post(BASE_URL, data);
-};
-
-export const updateMatType = (id, data) => {
-  return api.put(`${BASE_URL}/${id}`, data);
-};
-
-export const deleteMatType = (id) => {
-  return api.delete(`${BASE_URL}/${id}`);
-};
+export const getMatTypes = (params) => api.get(BASE_URL, { params });
+export const getMatTypeById = (id) => api.get(`${BASE_URL}/${id}`);
+export const createMatType = (data) => api.post(BASE_URL, data);
+export const updateMatType = (id, data) => api.put(`${BASE_URL}/${id}`, data);
+export const deleteMatType = (id) => api.delete(`${BASE_URL}/${id}`);

@@ -2,22 +2,11 @@ import api from "@/service/api";
 
 const BASE_URL = "/tables";
 
-export const getTables = async () => {
-  const response = await api.get(BASE_URL);
-  return response.data;
-};
-
-export const saveTableSpec = async (tableData) => {
-  const response = await api.post(BASE_URL, tableData);
-  return response.data;
-};
-
-export const deleteTableSpec = async (tablen) => {
-  const response = await api.delete(`${BASE_URL}/${tablen}`);
-  return response.data;
-};
-
-export const executeTableScript = async ({ tablen, script }) => {
-  const response = await api.post(`${BASE_URL}/execute`, { tablen, script });
-  return response.data;
-};
+export const getTables = (langu = "KO") =>
+  api.get(BASE_URL, { params: { langu } });
+export const getTableDetails = (tablen, langu = "KO") =>
+  api.get(`${BASE_URL}/${tablen}`, { params: { langu } });
+export const saveTableSpec = (tableData) => api.post(BASE_URL, tableData);
+export const deleteTableSpec = (tablen) => api.delete(`${BASE_URL}/${tablen}`);
+export const executeTableScript = (data) =>
+  api.post(`${BASE_URL}/execute`, data);

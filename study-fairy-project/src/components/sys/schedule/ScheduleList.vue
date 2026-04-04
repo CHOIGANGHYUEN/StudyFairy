@@ -1,8 +1,9 @@
+모
 <template>
   <section class="card-section list-section">
     <div class="card-header list-header">
       <h2 class="section-title">등록된 일정 마스터 목록</h2>
-      <span class="badge">{{ schedules.length }}건</span>
+      <span class="badge badge-yellow">{{ schedules.length }}건</span>
     </div>
     <div class="table-container">
       <table class="data-table">
@@ -91,54 +92,13 @@ const formatDateOnly = (dateString) => {
 </script>
 
 <style scoped>
-.list-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.badge {
-  background-color: #fef3c7;
-  color: #d97706;
-  padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
-.table-container {
-  overflow-x: auto;
-}
 .data-table tr:hover td {
   background-color: #f8fafc;
-}
-.empty-state {
-  text-align: center;
-  padding: 3rem !important;
-  color: #94a3b8;
-}
-.status-badge {
-  font-size: 0.75rem;
-  padding: 0.25rem 0.6rem;
-  border-radius: 9999px;
-  font-weight: 600;
-}
-.status-badge.active {
-  background-color: #dcfce7;
-  color: #166534;
-}
-.status-badge.inactive {
-  background-color: #f1f5f9;
-  color: #475569;
 }
 .text-purple-700 {
   color: #7e22ce;
 }
 .text-blue-700 {
   color: #1d4ed8;
-}
-.pagination-wrapper {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-top: 1.5rem;
 }
 </style>

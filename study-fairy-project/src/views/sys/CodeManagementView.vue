@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-container">
+  <div class="admin-container list-layout">
     <PageTitle>
       <template #icon>
         <svg
@@ -19,9 +19,9 @@
       </template>
     </PageTitle>
 
-    <div v-if="needsInitialization" class="initialization-prompt card-section">
+    <div v-if="needsInitialization" class="card-section text-center py-8 mb-8">
       <h2 class="section-title">초기 설정 필요</h2>
-      <p>
+      <p class="my-4">
         코드 카테고리 데이터가 없습니다. 시스템의 기본 코드 카테고리를
         설정하려면 아래 버튼을 클릭하세요.
       </p>
@@ -41,14 +41,27 @@
         @change="onCategoryChange"
       />
 
-      <div class="code-management-layout">
-        <CodeGroupList
-          :code-heads="codeHeads"
-          :selected-group-code="selectedGroupCode"
-          @select-group="selectGroup"
-        />
+      <div class="master-detail-layout">
+        <!-- Left Panel: Master List (with Pagination) -->
+        <div class="master-panel card mb-0">
+          <div class="overflow-y-auto flex-1 p-0">
+            <CodeGroupList
+              :code-heads="paginatedCodeHeads"
+              :selected-group-code="selectedGroupCode"
+              @select-group="selectGroup"
+            />
+          </div>
+          <div class="border-t p-4 flex justify-center bg-white rounded-b-sm">
+            <Pagination
+              :current-page="currentPage"
+              :total-pages="totalPages"
+              @update:current-page="currentPage = $event"
+            />
+          </div>
+        </div>
 
-        <div class="right-panel">
+        <!-- Right Panel: Detail Editor & Items -->
+        <div class="detail-panel">
           <CodeGroupEditor
             v-model:formData="headForm"
             :head-form-mode="headFormMode"
@@ -71,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import {
   getCodeCategories,
   initializeCategories,
@@ -89,6 +102,7 @@ import CodeCategorySelector from "@/components/sys/code/CodeCategorySelector.vue
 import CodeGroupList from "@/components/sys/code/CodeGroupList.vue";
 import CodeGroupEditor from "@/components/sys/code/CodeGroupEditor.vue";
 import CodeItemsManager from "@/components/sys/code/CodeItemsManager.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const categories = ref([]);
 const selectedCategory = ref(null);
@@ -116,6 +130,20 @@ const getEmptyHeadForm = () => {
 };
 
 const headForm = ref(getEmptyHeadForm());
+
+// --- 페이징 처리 로직 ---
+const currentPage = ref(1);
+const itemsPerPage = ref(10); // 한 페이지당 항목 수
+
+const totalPages = computed(() => {
+  return Math.ceil(codeHeads.value.length / itemsPerPage.value) || 1;
+});
+
+const paginatedCodeHeads = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return codeHeads.value.slice(start, end);
+});
 
 const fetchCategories = async () => {
   try {
@@ -165,6 +193,7 @@ const fetchHeads = async () => {
     const res = await getCodeHeads(selectedCategory.value);
     const responseData = res.data.data || res.data;
     codeHeads.value = Array.isArray(responseData) ? responseData : [];
+    currentPage.value = 1; // 데이터 로드 후 1페이지로 리셋
     if (codeHeads.value.length > 0) {
       selectGroup(codeHeads.value[0]);
     } else {
@@ -295,26 +324,3 @@ const deleteItem = async (item) => {
 
 onMounted(fetchCategories);
 </script>
-
-<style scoped>
-.initialization-prompt {
-  padding: 2rem;
-  text-align: center;
-  margin-bottom: 2rem;
-}
-.initialization-prompt p {
-  margin: 1rem 0;
-}
-.code-management-layout {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 2rem;
-  align-items: start;
-}
-.right-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  min-width: 0;
-}
-</style>

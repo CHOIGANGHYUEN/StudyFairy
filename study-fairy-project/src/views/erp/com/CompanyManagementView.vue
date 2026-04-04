@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-container">
+  <div class="admin-container list-layout">
     <PageTitle title="회사 관리" />
     <CompanyForm
       :is-edit-mode="isEditMode"
@@ -9,29 +9,55 @@
       @submit="handleSubmit"
       @reset="resetForm"
     />
-    <CompanyList
-      :companies="companies"
-      :is-submitting="isSubmitting"
-      @edit="handleEdit"
-      @delete="handleDelete"
-    />
+
+    <div class="card flex-1 flex flex-col min-h-0 mb-0">
+      <div class="overflow-y-auto flex-1 p-0">
+        <CompanyList
+          :companies="paginatedCompanies"
+          :is-submitting="isSubmitting"
+          @edit="handleEdit"
+          @delete="handleDelete"
+        />
+      </div>
+      <div class="border-t p-4 flex justify-center bg-white rounded-b-sm">
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @update:current-page="currentPage = $event"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import * as companyService from "@/service/companyService";
 import { getLanguages } from "@/service/languageService";
 import PageTitle from "@/components/PageTitle.vue";
 import CompanyForm from "@/components/sys/company/CompanyForm.vue";
 import CompanyList from "@/components/sys/company/CompanyList.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
 const editTargetId = ref(null);
 const companies = ref([]);
 const languages = ref([]);
+
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+const totalPages = computed(() => {
+  return Math.ceil(companies.value.length / itemsPerPage.value) || 1;
+});
+
+const paginatedCompanies = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return companies.value.slice(start, end);
+});
 
 const authStore = useAuthStore();
 
@@ -73,6 +99,7 @@ const fetchCompanies = async () => {
   try {
     const response = await companyService.getCompanies();
     companies.value = response.data;
+    currentPage.value = 1;
   } catch (error) {
     console.error("Failed to fetch companies:", error);
     alert("회사 목록을 불러오는 데 실패했습니다.");

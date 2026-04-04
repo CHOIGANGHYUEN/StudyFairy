@@ -7,6 +7,9 @@ module.exports = (sequelize, DataTypes) => {
       Fieldx.belongsTo(models.Field, {
         foreignKey: "fieldn",
         targetKey: "fieldn",
+        scope: {
+          langu: "KO",
+        },
       });
     }
   }

@@ -65,45 +65,4 @@ function getMatTypeName(matType) {
 }
 </script>
 
-<style scoped>
-/* Basic styles for table and states */
-.card-section {
-  background: #fff;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-.card-header {
-  margin-bottom: 1rem;
-}
-.section-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-.loading-state,
-.empty-state {
-  text-align: center;
-  padding: 2rem;
-  color: #666;
-}
-.table-container {
-  overflow-x: auto;
-}
-.data-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.data-table th,
-.data-table td {
-  border: 1px solid #e2e8f0;
-  padding: 0.75rem;
-  text-align: left;
-}
-.data-table th {
-  background-color: #f8fafc;
-}
-.action-buttons {
-  display: flex;
-  gap: 0.5rem;
-}
-</style>
+<style scoped></style>

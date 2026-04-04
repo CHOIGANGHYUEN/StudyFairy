@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       Field.hasMany(models.Fieldx, {
         foreignKey: "fieldn",
         sourceKey: "fieldn",
-        as: "names",
+        as: "fieldx",
       });
     }
   }

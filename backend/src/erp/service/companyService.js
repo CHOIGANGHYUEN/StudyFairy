@@ -1,6 +1,6 @@
 const { sequelize, Company, Companyx, Sequelize } = require("../../index");
 const { Op } = Sequelize;
-
+const HttpError = require("../../../utils/HttpError");
 // 모든 회사 정보와 다국어 이름을 함께 조회
 exports.getCompanies = async () => {
   return await Company.findAll({
@@ -25,59 +25,54 @@ exports.getCompanyById = async (id) => {
     ],
   });
   if (!company) {
-    const error = new Error("회사를 찾을 수 없습니다.");
-    error.statusCode = 404;
-    throw error;
+    throw new HttpError(404, "회사를 찾을 수 없습니다.");
   }
   return company;
 };
 
 // 회사 정보 생성
 exports.createCompany = async (companyData) => {
-  const t = await sequelize.transaction();
-  try {
-    const { names, ...mainData } = companyData;
+  return await sequelize
+    .transaction(async (t) => {
+      const { names, ...mainData } = companyData;
 
-    // 1. Check for required fields
-    if (!mainData.company) {
-      const error = new Error("회사 ID는 필수입니다.");
-      error.statusCode = 400;
-      throw error;
-    }
+      // 1. Check for required fields
+      if (!mainData.company) {
+        throw new HttpError(400, "회사 ID는 필수입니다.");
+      }
 
-    // 2. Create main company record
-    const newCompany = await Company.create(mainData, { transaction: t });
+      // 2. Create main company record
+      const newCompany = await Company.create(mainData, { transaction: t });
 
-    // 3. Create multilingual names if they exist
-    if (names && names.length > 0) {
-      const companyxData = names.map((item) => ({
-        ...item,
-        company: newCompany.company,
-        createdBy: mainData.createdBy,
-      }));
-      await Companyx.bulkCreate(companyxData, { transaction: t });
-    }
+      // 3. Create multilingual names if they exist
+      if (names && names.length > 0) {
+        const companyxData = names.map((item) => ({
+          ...item,
+          company: newCompany.company,
+          createdBy: mainData.createdBy,
+        }));
+        await Companyx.bulkCreate(companyxData, { transaction: t });
+      }
 
-    await t.commit();
-    return {
-      message: "성공적으로 등록되었습니다.",
-      insertId: newCompany.id,
-    };
-  } catch (err) {
-    await t.rollback();
-    if (err.name === "SequelizeUniqueConstraintError") {
-      const error = new Error("이미 존재하는 회사 ID입니다.");
-      error.statusCode = 409;
-      throw error;
-    }
-    throw err;
-  }
+      return {
+        message: "성공적으로 등록되었습니다.",
+        insertId: newCompany.id,
+      };
+    })
+    .catch((err) => {
+      if (
+        err.name === "SequelizeUniqueConstraintError" ||
+        err instanceof Sequelize.UniqueConstraintError
+      ) {
+        throw new HttpError(409, "이미 존재하는 회사 ID입니다.");
+      }
+      throw err;
+    });
 };
 
 // 회사 정보 수정
 exports.updateCompany = async (id, companyData) => {
-  const t = await sequelize.transaction();
-  try {
+  return await sequelize.transaction(async (t) => {
     const { names, company, ...mainData } = companyData;
 
     // 1. Update main company record
@@ -87,9 +82,7 @@ exports.updateCompany = async (id, companyData) => {
     });
 
     if (affectedRows === 0) {
-      const error = new Error("수정할 회사를 찾을 수 없습니다.");
-      error.statusCode = 404;
-      throw error;
+      throw new HttpError(404, "수정할 회사를 찾을 수 없습니다.");
     }
 
     // 2. Update or create multilingual names
@@ -114,38 +107,27 @@ exports.updateCompany = async (id, companyData) => {
       }
     }
 
-    await t.commit();
     return { message: "성공적으로 수정되었습니다." };
-  } catch (err) {
-    await t.rollback();
-    throw err;
-  }
+  });
 };
 
 // 회사 정보 삭제
 exports.deleteCompany = async (id) => {
-  const t = await sequelize.transaction();
-  try {
-    const company = await Company.findByPk(id);
-    if (!company) {
-      const error = new Error("삭제할 회사를 찾을 수 없습니다.");
-      error.statusCode = 404;
-      throw error;
+  return await sequelize.transaction(async (t) => {
+    const companyInstance = await Company.findByPk(id, { transaction: t });
+    if (!companyInstance) {
+      throw new HttpError(404, "삭제할 회사를 찾을 수 없습니다.");
     }
 
     // 1. Delete associated multilingual names
     await Companyx.destroy({
-      where: { company: company.company },
+      where: { company: companyInstance.company },
       transaction: t,
     });
 
     // 2. Delete main company record
-    await Company.destroy({ where: { id }, transaction: t });
+    await companyInstance.destroy({ transaction: t });
 
-    await t.commit();
     return { message: "성공적으로 삭제되었습니다." };
-  } catch (err) {
-    await t.rollback();
-    throw err;
-  }
+  });
 };

@@ -1,5 +1,5 @@
 <template>
-  <div class="admin-container">
+  <div class="admin-container list-layout">
     <PageTitle>
       <template #icon>
         <svg
@@ -20,21 +20,48 @@
     </PageTitle>
 
     <UserForm :is-submitting="isSubmitting" @register="handleRegister" />
-    <UserList :users="users" />
+
+    <div class="card flex-1 flex flex-col min-h-0 mb-0">
+      <div class="overflow-y-auto flex-1 p-0">
+        <UserList :users="paginatedUsers" />
+      </div>
+      <div class="border-t p-4 flex justify-center bg-white rounded-b-sm">
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @update:current-page="currentPage = $event"
+        />
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { getUsers, createUser } from "@/service/userService";
 import PageTitle from "@/components/PageTitle.vue";
 import UserForm from "@/components/sys/user/UserForm.vue";
 import UserList from "@/components/sys/user/UserList.vue";
+import Pagination from "@/components/Pagination.vue";
 
 const authStore = useAuthStore();
 const isSubmitting = ref(false);
 const users = ref([]);
+
+// Pagination State
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
+
+const totalPages = computed(() => {
+  return Math.ceil(users.value.length / itemsPerPage.value) || 1;
+});
+
+const paginatedUsers = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return users.value.slice(start, end);
+});
 
 // 초기 데이터 로드 (Mock 데이터 예시)
 onMounted(() => {
@@ -45,6 +72,7 @@ const fetchUsers = async () => {
   try {
     const response = await getUsers();
     users.value = response.data;
+    currentPage.value = 1;
   } catch (error) {
     console.error("사용자 목록 로드 오류:", error);
   }

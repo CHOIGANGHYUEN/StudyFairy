@@ -8,6 +8,7 @@ module.exports = (sequelize, DataTypes) => {
       id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
       langu: { type: DataTypes.STRING(10), allowNull: false },
       tablen: { type: DataTypes.STRING(45), allowNull: false },
+      fieldn: { type: DataTypes.STRING(45), allowNull: false },
       indexn: { type: DataTypes.STRING(45), allowNull: false },
       module: { type: DataTypes.STRING(45), allowNull: false },
       indexNm: DataTypes.STRING(100),
@@ -25,8 +26,8 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         {
           unique: true,
-          fields: ["langu", "tablen", "indexn"],
-          name: "sysIndexFieldsx_U1",
+          fields: ["langu", "tablen", "fieldn", "indexn"],
+          name: "sysTableIndexx_U1",
         },
         { fields: ["module"], name: "sysIndexFieldsx_IDX1" },
       ],
