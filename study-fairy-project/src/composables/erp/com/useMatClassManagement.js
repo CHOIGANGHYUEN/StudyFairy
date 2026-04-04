@@ -1,9 +1,11 @@
 import { ref, computed, onMounted } from "vue";
 import * as matClassService from "@/service/matClassService";
+import { getLanguages } from "@/service/languageService";
 import { useToast } from "@/composables/useToast";
 
 export function useMatClassManagement() {
   const matClasses = ref([]);
+  const languages = ref([]);
   const isLoading = ref(false);
   const isSubmitting = ref(false);
   const isFormVisible = ref(false);
@@ -23,6 +25,15 @@ export function useMatClassManagement() {
       console.error("자재 분류 목록 조회 실패:", error);
     } finally {
       isLoading.value = false;
+    }
+  };
+
+  const fetchLanguages = async () => {
+    try {
+      const res = await getLanguages();
+      languages.value = res.data;
+    } catch (error) {
+      console.error("Failed to fetch languages:", error);
     }
   };
 
@@ -70,9 +81,14 @@ export function useMatClassManagement() {
     }
   };
 
-  onMounted(fetchMatClasses);
+  onMounted(() => {
+    fetchMatClasses();
+    fetchLanguages();
+  });
+
   return {
     matClasses,
+    languages,
     isLoading,
     isSubmitting,
     isFormVisible,

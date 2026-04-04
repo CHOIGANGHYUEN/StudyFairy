@@ -1,18 +1,22 @@
 <template>
-  <div class="admin-container management-container">
-    <PageTitle title="자재 분류 관리" />
-
+  <div class="management-container">
+    <PageTitle title="플랜트(Plant) 관리" />
     <div class="controls">
       <button @click="openFormModal()" class="btn-primary">
-        새 자재 분류 추가
+        새 플랜트 추가
       </button>
     </div>
-
-    <MatClassList
-      :mat-classes="matClasses"
+    <PlantList
+      :plants="plants"
       @edit-item="openFormModal"
+      @copy-item="openCopyModal"
       @delete-item="handleDelete"
       :is-loading="isLoading"
+    />
+    <Pagination
+      :current-page="currentPage"
+      :total-pages="totalPages"
+      @update:current-page="currentPage = $event"
     />
 
     <Modal v-if="isFormVisible" @close="closeFormModal">
@@ -20,10 +24,11 @@
         <h3>{{ formTitle }}</h3>
       </template>
       <template #body>
-        <MatClassForm
-          :mat-class-data="selectedMatClass"
-          :mat-classes="matClasses"
+        <PlantForm
+          :plant-data="selectedPlant"
+          :companies="companies"
           :languages="languages"
+          :is-copy-mode="isCopyMode"
           :is-submitting="isSubmitting"
           @save="handleSave"
           @cancel="closeFormModal"
@@ -35,26 +40,31 @@
 
 <script setup>
 import PageTitle from "@/components/PageTitle.vue";
-import MatClassList from "@/components/erp/com/MatClassList.vue";
-import MatClassForm from "@/components/erp/com/MatClassForm.vue";
+import PlantList from "@/components/erp/com/PlantList.vue";
+import PlantForm from "@/components/erp/com/PlantForm.vue";
 import Modal from "@/components/layout/Modal.vue";
-import { useMatClassManagement } from "@/composables/erp/com/useMatClassManagement";
+import Pagination from "@/components/Pagination.vue";
+import { usePlantManagement } from "@/composables/erp/com/usePlantManagement";
 
 const {
-  matClasses,
+  plants,
+  companies,
   languages,
+  currentPage,
+  totalPages,
   isLoading,
   isSubmitting,
   isFormVisible,
-  selectedMatClass,
+  isCopyMode,
+  selectedPlant,
   formTitle,
   openFormModal,
+  openCopyModal,
   closeFormModal,
   handleSave,
   handleDelete,
-} = useMatClassManagement();
+} = usePlantManagement();
 </script>
-
 <style scoped>
 .management-container {
   display: flex;
