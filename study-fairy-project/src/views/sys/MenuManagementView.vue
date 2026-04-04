@@ -63,6 +63,7 @@ import PageTitle from "@/components/PageTitle.vue";
 import MenuForm from "@/components/sys/menu/MenuForm.vue";
 import MenuList from "@/components/sys/menu/MenuList.vue";
 import Pagination from "@/components/Pagination.vue";
+import { useToast } from "@/composables/useToast";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
@@ -70,6 +71,7 @@ const editTargetId = ref(null);
 const menuTree = ref([]);
 const expandedMenus = ref([]);
 const availableLanguages = ref([]);
+const toast = useToast();
 
 const menuForm = ref({
   langu: "KO",
@@ -152,12 +154,12 @@ const handleRegisterOrUpdate = async () => {
     } else {
       await createMenu(payload);
     }
-    alert("완료되었습니다.");
+    toast.success("완료되었습니다.");
     resetForm();
     await fetchMenus();
   } catch (error) {
     const message = error.response?.data?.message || "작업에 실패했습니다.";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }

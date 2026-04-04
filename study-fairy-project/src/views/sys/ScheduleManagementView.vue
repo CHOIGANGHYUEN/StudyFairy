@@ -64,8 +64,10 @@ import PageTitle from "@/components/PageTitle.vue";
 import ScheduleForm from "@/components/sys/schedule/ScheduleForm.vue";
 import ScheduleSearch from "@/components/sys/schedule/ScheduleSearch.vue";
 import ScheduleList from "@/components/sys/schedule/ScheduleList.vue";
+import { useToast } from "@/composables/useToast";
 
 const authStore = useAuthStore();
+const toast = useToast();
 
 // Pagination State
 const currentPage = ref(1);
@@ -214,7 +216,7 @@ const handleSubmit = async () => {
         changedBy: authStore.user?.userId || "SYSTEM",
       };
       await updateSchedule(editTargetId.value, payload);
-      alert("일정이 수정되었습니다.");
+      toast.success("일정이 수정되었습니다.");
     } else {
       const year = parseInt(form.value.schYear);
       const month = parseInt(form.value.schMonth);
@@ -234,7 +236,7 @@ const handleSubmit = async () => {
         });
       }
       await createScheduleBulk(bulkPayload);
-      alert(`${year}년 ${month}월의 일정이 일괄 등록되었습니다.`);
+      toast.success(`${year}년 ${month}월의 일정이 일괄 등록되었습니다.`);
     }
 
     resetForm();
@@ -242,7 +244,7 @@ const handleSubmit = async () => {
     await fetchMinMaxDates(); // 일괄 등록/수정 후 최소/최대 일자 갱신
   } catch (error) {
     const message = error.response?.data?.message || "작업 실패";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }

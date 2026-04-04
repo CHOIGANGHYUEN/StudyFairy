@@ -48,6 +48,7 @@ import {
 import PageTitle from "@/components/PageTitle.vue";
 import RoleForm from "@/components/sys/role/RoleForm.vue";
 import RoleList from "@/components/sys/role/RoleList.vue";
+import { useToast } from "@/composables/useToast";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
@@ -55,6 +56,7 @@ const editTargetId = ref(null);
 const roles = ref([]);
 
 const authStore = useAuthStore();
+const toast = useToast();
 
 const form = ref({
   roleId: "",
@@ -93,12 +95,14 @@ const handleSubmit = async () => {
       await createRole(payload);
     }
 
-    alert(`권한이 성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
+    toast.success(
+      `권한이 성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`,
+    );
     resetForm();
     await fetchRoles(); // 목록 새로고침
   } catch (error) {
     const message = error.response?.data?.message || "작업에 실패했습니다.";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }

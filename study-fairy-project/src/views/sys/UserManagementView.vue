@@ -44,8 +44,10 @@ import PageTitle from "@/components/PageTitle.vue";
 import UserForm from "@/components/sys/user/UserForm.vue";
 import UserList from "@/components/sys/user/UserList.vue";
 import Pagination from "@/components/Pagination.vue";
+import { useToast } from "@/composables/useToast";
 
 const authStore = useAuthStore();
+const toast = useToast();
 const isSubmitting = ref(false);
 const users = ref([]);
 
@@ -87,11 +89,11 @@ const handleRegister = async (userId) => {
       createdBy: authStore.user?.id || "SYSTEM",
       changedBy: authStore.user?.id || "SYSTEM",
     });
-    alert("사용자가 성공적으로 등록되었습니다.");
+    toast.success("사용자가 성공적으로 등록되었습니다.");
     await fetchUsers(); // 목록 새로고침
   } catch (error) {
     const message = error.response?.data?.message || "등록 실패";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }

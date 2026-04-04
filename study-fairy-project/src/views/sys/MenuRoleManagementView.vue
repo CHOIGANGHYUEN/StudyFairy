@@ -53,8 +53,10 @@ import {
 import PageTitle from "@/components/PageTitle.vue";
 import MenuRoleForm from "@/components/sys/menuRole/MenuRoleForm.vue";
 import MenuRoleList from "@/components/sys/menuRole/MenuRoleList.vue";
+import { useToast } from "@/composables/useToast";
 
 const authStore = useAuthStore();
+const toast = useToast();
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
@@ -130,7 +132,7 @@ const handleSubmit = async () => {
       await createRoleMenu(payload);
     }
 
-    alert(`매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
+    toast.success(`매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
 
     // 연속 등록을 위해 역할(Role) 선택은 초기화하지 않고 유지
     const currentRoleId = form.value.roleId;
@@ -143,7 +145,7 @@ const handleSubmit = async () => {
     await fetchMappings();
   } catch (error) {
     const message = error.response?.data?.message || "작업 실패";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -176,12 +178,12 @@ const deleteMapping = async (id) => {
   isSubmitting.value = true;
   try {
     await deleteRoleMenu(id);
-    alert("삭제되었습니다.");
+    toast.success("삭제되었습니다.");
     if (isEditMode.value && editTargetId.value === id) resetForm();
     await fetchMappings();
   } catch (error) {
     const message = error.response?.data?.message || "삭제 실패";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }

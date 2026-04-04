@@ -26,9 +26,11 @@
 <script setup>
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { useToast } from "@/composables/useToast";
 
 const router = useRouter();
 const authStore = useAuthStore();
+const toast = useToast();
 
 const goToHome = () => {
   router.push("/");
@@ -49,7 +51,7 @@ const handleLogout = () => {
   localStorage.removeItem("auth_user");
   localStorage.removeItem("auth_expires_at");
 
-  alert("로그아웃 되었습니다.");
+  toast.success("로그아웃 되었습니다.");
   router.push("/login");
 };
 </script>
@@ -147,5 +149,16 @@ const handleLogout = () => {
 }
 .ml-2 {
   margin-left: 0.75rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 640px) {
+  .app-header {
+    padding: 1rem;
+  }
+  .user-name,
+  .role-badge {
+    display: none;
+  }
 }
 </style>

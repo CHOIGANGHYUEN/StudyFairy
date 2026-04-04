@@ -148,3 +148,18 @@ watch(
   { deep: true }, // user 객체 내부의 변경도 감지
 );
 </script>
+
+<style scoped>
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .tab-list {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding-bottom: 0.25rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-list::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for clean look */
+  }
+}
+</style>

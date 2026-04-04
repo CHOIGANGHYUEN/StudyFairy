@@ -355,4 +355,26 @@ async function copyToClipboard() {
   width: 1rem;
   height: 1rem;
 }
+
+@media (max-width: 640px) {
+  .segmented-control {
+    flex-direction: column;
+    width: 100%;
+  }
+  .segment {
+    text-align: center;
+  }
+  .footer-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .footer-actions button {
+    width: 100%;
+  }
+  .custom-modal-footer {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+}
 </style>

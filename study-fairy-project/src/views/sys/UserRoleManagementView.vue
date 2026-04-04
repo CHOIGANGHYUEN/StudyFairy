@@ -43,8 +43,10 @@ import {
 import UserRoleForm from "@/components/sys/userRole/UserRoleForm.vue";
 import UserRoleList from "@/components/sys/userRole/UserRoleList.vue";
 import Pagination from "@/components/Pagination.vue";
+import { useToast } from "@/composables/useToast";
 
 const authStore = useAuthStore();
+const toast = useToast();
 
 // Pagination State
 const currentPage = ref(1);
@@ -125,14 +127,14 @@ const handleSubmit = async () => {
       await createUserRole(payload);
     }
 
-    alert(
+    toast.success(
       `사용자-권한 매핑이 ${isEditMode.value ? "수정" : "등록"}되었습니다.`,
     );
     resetForm();
     await fetchMappings(currentPage.value);
   } catch (error) {
     const message = error.response?.data?.message || "작업 실패";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -154,12 +156,12 @@ const deleteMapping = async (id) => {
   isSubmitting.value = true;
   try {
     await deleteUserRole(id);
-    alert("삭제되었습니다.");
+    toast.success("삭제되었습니다.");
     if (isEditMode.value && editTargetId.value === id) resetForm();
     await fetchMappings(currentPage.value);
   } catch (error) {
     const message = error.response?.data?.message || "삭제 실패";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }

@@ -13,6 +13,9 @@
 
     <!-- 4. Footer 영역 -->
     <AppFooter />
+
+    <!-- 5. 전역 Toast 알림 -->
+    <GlobalToast />
   </div>
 </template>
 
@@ -20,4 +23,5 @@
 import AppHeader from "./components/layout/AppHeader.vue";
 import NavMenu from "./components/layout/NavMenu.vue";
 import AppFooter from "./components/layout/AppFooter.vue";
+import GlobalToast from "./components/layout/GlobalToast.vue";
 </script>

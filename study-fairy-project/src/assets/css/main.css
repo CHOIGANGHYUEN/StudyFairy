@@ -698,40 +698,107 @@ body {
 }
 
 /* Toast */
-.toast {
-  position: absolute;
-  top: -3.5rem;
+.toast-container {
+  position: fixed;
+  top: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
-  background-color: var(--success-color);
-  color: white;
-  padding: 0.6rem 1.25rem;
-  border-radius: 9999px;
-  box-shadow: var(--shadow-md);
-  font-weight: 600;
-  font-size: 0.85rem;
-  z-index: 1050;
-  animation: fadeInOutToast 2.5s ease-in-out forwards;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  z-index: 9999;
+  pointer-events: none; /* 클릭 방해 방지 */
+}
+.global-toast {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 9999px;
+  box-shadow: var(--shadow-floating);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: white;
+  pointer-events: auto; /* 토스트 자체는 클릭/호버 가능 */
+  min-width: 250px;
+  justify-content: space-between;
 }
-@keyframes fadeInOutToast {
-  0% {
-    opacity: 0;
-    transform: translate(-50%, 10px);
+.toast-success { background-color: var(--success-color); }
+.toast-error { background-color: var(--danger-color); }
+.toast-warning { background-color: #f59e0b; }
+.toast-info { background-color: var(--primary-color); }
+
+/* Vue Transition Group Animation */
+.toast-list-enter-active,
+.toast-list-leave-active {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.toast-list-enter-from {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.9);
+}
+.toast-list-leave-to {
+  opacity: 0;
+  transform: translateY(-20px) scale(0.9);
+}
+
+/* ==========================================
+   Responsive Breakpoints
+   ========================================== */
+
+/* Tablet & Small Desktop (Max: 1024px) */
+@media (max-width: 1024px) {
+  .master-detail-layout {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem;
+    height: auto;
   }
-  15% {
-    opacity: 1;
-    transform: translate(-50%, 0);
+  .master-panel {
+    height: auto;
+    min-height: 400px;
   }
-  85% {
-    opacity: 1;
-    transform: translate(-50%, 0);
+  .detail-panel {
+    overflow-y: visible;
+    padding-right: 0;
   }
-  100% {
-    opacity: 0;
-    transform: translate(-50%, 10px);
+}
+
+/* Mobile (Max: 768px) */
+@media (max-width: 768px) {
+  .app-body {
+    padding: 1rem;
+  }
+  .admin-container {
+    padding: 0 0.5rem;
+    margin: 1rem auto;
+  }
+  .page-title {
+    font-size: 1.5rem;
+  }
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem;
+  }
+  .card-header,
+  .modal-header {
+    padding: 1rem 1.25rem;
+  }
+  .card-body,
+  .modal-body {
+    padding: 1rem 1.25rem;
+  }
+  .list-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .modal-container {
+    width: 95%;
+    max-width: 100%;
+  }
+  .action-buttons {
+    flex-wrap: wrap;
   }
 }
 

@@ -39,6 +39,7 @@ import PageTitle from "@/components/PageTitle.vue";
 import CompanyForm from "@/components/sys/company/CompanyForm.vue";
 import CompanyList from "@/components/sys/company/CompanyList.vue";
 import Pagination from "@/components/Pagination.vue";
+import { useToast } from "@/composables/useToast";
 
 const isSubmitting = ref(false);
 const isEditMode = ref(false);
@@ -60,6 +61,7 @@ const paginatedCompanies = computed(() => {
 });
 
 const authStore = useAuthStore();
+const toast = useToast();
 
 const getInitialForm = () => ({
   company: "",
@@ -102,7 +104,7 @@ const fetchCompanies = async () => {
     currentPage.value = 1;
   } catch (error) {
     console.error("Failed to fetch companies:", error);
-    alert("회사 목록을 불러오는 데 실패했습니다.");
+    toast.error("회사 목록을 불러오는 데 실패했습니다.");
   }
 };
 
@@ -118,12 +120,14 @@ const handleSubmit = async () => {
       payload.createdBy = authStore.user?.userid || "SYSTEM";
       await companyService.createCompany(payload);
     }
-    alert(`성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`);
+    toast.success(
+      `성공적으로 ${isEditMode.value ? "수정" : "등록"}되었습니다.`,
+    );
     resetForm();
     await fetchCompanies();
   } catch (error) {
     const message = error.response?.data?.message || "작업에 실패했습니다.";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -146,14 +150,14 @@ const handleDelete = async (id) => {
   isSubmitting.value = true;
   try {
     await companyService.deleteCompany(id);
-    alert("성공적으로 삭제되었습니다.");
+    toast.success("성공적으로 삭제되었습니다.");
     if (isEditMode.value && editTargetId.value === id) {
       resetForm();
     }
     await fetchCompanies();
   } catch (error) {
     const message = error.response?.data?.message || "삭제에 실패했습니다.";
-    alert(`오류: ${message}`);
+    toast.error(`오류: ${message}`);
   } finally {
     isSubmitting.value = false;
   }

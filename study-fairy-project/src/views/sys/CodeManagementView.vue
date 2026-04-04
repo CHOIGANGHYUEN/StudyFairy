@@ -103,6 +103,7 @@ import CodeGroupList from "@/components/sys/code/CodeGroupList.vue";
 import CodeGroupEditor from "@/components/sys/code/CodeGroupEditor.vue";
 import CodeItemsManager from "@/components/sys/code/CodeItemsManager.vue";
 import Pagination from "@/components/Pagination.vue";
+import { useToast } from "@/composables/useToast";
 
 const categories = ref([]);
 const selectedCategory = ref(null);
@@ -112,6 +113,7 @@ const selectedGroupCode = ref(null);
 const isSubmitting = ref(false);
 const headFormMode = ref("view");
 const needsInitialization = ref(false);
+const toast = useToast();
 
 const CATEGORY_CODE_FOR_CATEGORIES = "SYS";
 const GROUP_CODE_FOR_CATEGORIES = "CAT001";
@@ -172,11 +174,11 @@ const handleInitialize = async () => {
   isSubmitting.value = true;
   try {
     await initializeCategories();
-    alert("기본 카테고리가 성공적으로 설정되었습니다.");
+    toast.success("기본 카테고리가 성공적으로 설정되었습니다.");
     await fetchCategories();
   } catch (error) {
     const message = error.response?.data?.message || "Initialization failed";
-    alert(`초기화 실패: ${message}`);
+    toast.error(`초기화 실패: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -236,7 +238,7 @@ const newHead = () => {
 
 const saveHead = async () => {
   if (!headForm.value.groupCode) {
-    alert("Group Code is required.");
+    toast.warning("Group Code is required.");
     return;
   }
   isSubmitting.value = true;
@@ -252,7 +254,7 @@ const saveHead = async () => {
         headForm.value,
       );
     }
-    alert(`그룹이 ${isCreate ? "생성" : "저장"}되었습니다.`);
+    toast.success(`그룹이 ${isCreate ? "생성" : "저장"}되었습니다.`);
     await fetchHeads();
     const newGroup = codeHeads.value.find(
       (h) => h.groupCode === headForm.value.groupCode,
@@ -260,7 +262,7 @@ const saveHead = async () => {
     if (newGroup) selectGroup(newGroup);
   } catch (error) {
     const message = error.response?.data?.message || "저장 실패";
-    alert(`저장 실패: ${message}`);
+    toast.error(`저장 실패: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -270,17 +272,17 @@ const deleteHead = async (groupCode) => {
   if (!confirm(`[${groupCode}] 그룹을 삭제하시겠습니까?`)) return;
   try {
     await deleteCodeHead(selectedCategory.value, groupCode);
-    alert("삭제되었습니다.");
+    toast.success("삭제되었습니다.");
     fetchHeads();
   } catch (error) {
     const message = error.response?.data?.message || "삭제 실패";
-    alert(`삭제 실패: ${message}`);
+    toast.error(`삭제 실패: ${message}`);
   }
 };
 
 const handleSaveItem = async ({ itemData, isCreate }) => {
   if (!itemData.subCode) {
-    alert("Sub Code is required.");
+    toast.warning("Sub Code is required.");
     return;
   }
   isSubmitting.value = true;
@@ -300,11 +302,11 @@ const handleSaveItem = async ({ itemData, isCreate }) => {
         payload,
       );
     }
-    alert(`코드가 ${isCreate ? "생성" : "수정"}되었습니다.`);
+    toast.success(`코드가 ${isCreate ? "생성" : "수정"}되었습니다.`);
     await fetchItems(selectedGroupCode.value);
   } catch (error) {
     const message = error.response?.data?.message || "저장 실패";
-    alert(`저장 실패: ${message}`);
+    toast.error(`저장 실패: ${message}`);
   } finally {
     isSubmitting.value = false;
   }
@@ -314,11 +316,11 @@ const deleteItem = async (item) => {
   if (!confirm(`[${item.subCode}] 코드를 삭제하시겠습니까?`)) return;
   try {
     await deleteCodeItem(item.categoryCode, item.groupCode, item.subCode);
-    alert("삭제되었습니다.");
+    toast.success("삭제되었습니다.");
     fetchItems(item.groupCode);
   } catch (error) {
     const message = error.response?.data?.message || "삭제 실패";
-    alert(`삭제 실패: ${message}`);
+    toast.error(`삭제 실패: ${message}`);
   }
 };
 

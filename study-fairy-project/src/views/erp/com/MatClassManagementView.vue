@@ -39,12 +39,14 @@ import MatClassList from "@/components/erp/com/MatClassList.vue";
 import MatClassForm from "@/components/erp/com/MatClassForm.vue";
 import * as matClassService from "@/service/matClassService";
 import Modal from "@/components/layout/Modal.vue";
+import { useToast } from "@/composables/useToast";
 
 const matClasses = ref([]);
 const isLoading = ref(false);
 const isSubmitting = ref(false);
 const isFormVisible = ref(false);
 const selectedMatClass = ref(null);
+const toast = useToast();
 
 const formTitle = computed(() =>
   selectedMatClass.value?.id ? "자재 분류 수정" : "자재 분류 생성",
@@ -79,16 +81,16 @@ async function handleSave(formData) {
   try {
     if (formData.id) {
       await matClassService.updateMatClass(formData.id, formData);
-      alert("자재 분류가 성공적으로 수정되었습니다.");
+      toast.success("자재 분류가 성공적으로 수정되었습니다.");
     } else {
       await matClassService.createMatClass(formData);
-      alert("자재 분류가 성공적으로 생성되었습니다.");
+      toast.success("자재 분류가 성공적으로 생성되었습니다.");
     }
     closeFormModal();
     await fetchMatClasses();
   } catch (error) {
     console.error("저장 실패:", error);
-    alert(error.response?.data?.message || "저장에 실패했습니다.");
+    toast.error(error.response?.data?.message || "저장에 실패했습니다.");
   } finally {
     isSubmitting.value = false;
   }
@@ -103,11 +105,11 @@ async function handleDelete(id) {
     return;
   try {
     await matClassService.deleteMatClass(id);
-    alert("삭제되었습니다.");
+    toast.success("삭제되었습니다.");
     await fetchMatClasses();
   } catch (error) {
     console.error("삭제 실패:", error);
-    alert(error.response?.data?.message || "삭제에 실패했습니다.");
+    toast.error(error.response?.data?.message || "삭제에 실패했습니다.");
   }
 }
 </script>
