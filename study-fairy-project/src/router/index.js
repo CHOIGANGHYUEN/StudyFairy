@@ -5,7 +5,6 @@ import HomeView from "@/views/home/HomeView.vue";
 import LoginView from "@/views/sys/LoginView.vue";
 // ... (other imports)
 import SummaryView from "@/views/serv/SummaryView.vue";
-import EmptyView from "@/views/EmptyView.vue";
 import UserManagementView from "@/views/sys/UserManagementView.vue";
 import MenuManagementView from "@/views/sys/MenuManagementView.vue";
 import LanguageManagementView from "@/views/sys/LanguageManagementView.vue";
@@ -24,6 +23,9 @@ import MatClassManagementView from "@/views/erp/com/MatClassManagementView.vue";
 import TableManagementView from "@/views/sys/TableManagementView.vue";
 import TableHistoryView from "@/views/log/history/TableHistoryView.vue";
 import PdfExtractView from "@/views/serv/PdfExtractView.vue";
+
+// 시스템 관리 전용 모듈 라우터 임포트
+import systRouter from "@/module_sys/systRouter";
 
 const routes = [
   {
@@ -46,12 +48,7 @@ const routes = [
     name: "schedule-calendar",
     component: ScheduleCalendarView,
   },
-  {
-    // 새로운 빈 템플릿 라우트 추가
-    path: "/empty",
-    name: "empty",
-    component: EmptyView,
-  },
+
   {
     path: "/sys",
     name: "sys",
@@ -142,6 +139,9 @@ const routes = [
       title: "PDF 텍스트 추출", // PageTitle.vue 컴포넌트에서 활용할 폴백 타이틀
     },
   },
+
+  // module_sys에 정의된 라우터들 병합
+  ...systRouter,
 ];
 
 const router = createRouter({

@@ -17,43 +17,308 @@
       </template>
     </PageTitle>
 
-    <ScheduleForm
-      :is-edit-mode="isEditMode"
-      :is-submitting="isSubmitting"
-      :form-data="form"
-      :sys001-items="sys001Items"
-      :sys002-items="sys002Items"
-      :year-options="yearOptions"
-      @submit="handleSubmit"
-      @reset="resetForm"
-    />
+    <!-- 일정 등록 폼 (기존 ScheduleForm) -->
+    <section class="card-section">
+      <div class="card-header flex justify-between items-center">
+        <h2 class="section-title">
+          {{ isEditMode ? "일정 정보 수정" : "새 일정 등록" }}
+        </h2>
+        <button
+          v-if="isEditMode"
+          @click="resetForm"
+          class="text-sm font-medium text-blue-600 hover:underline"
+        >
+          취소 및 신규 전환
+        </button>
+      </div>
+      <form @submit.prevent="handleSubmit">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="schGroupCode">일정 그룹 (Group Code) *</label>
+            <select
+              id="schGroupCode"
+              v-model="form.schGroupCode"
+              required
+              :disabled="isSubmitting"
+            >
+              <option value="" disabled>그룹을 선택하세요</option>
+              <option v-if="sys001Items.length === 0" value="SGR001">
+                업무 (SGR001)
+              </option>
+              <option v-if="sys001Items.length === 0" value="SGR002">
+                학습 (SGR002)
+              </option>
+              <option
+                v-for="item in sys001Items"
+                :key="item.subCode"
+                :value="item.subCode"
+              >
+                {{ item.description || item.subCode }} ({{ item.subCode }})
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="userId">사용자 ID *</label>
+            <input
+              type="text"
+              id="userId"
+              v-model="form.userId"
+              required
+              :disabled="isSubmitting"
+            />
+          </div>
+          <div class="form-group" v-if="!isEditMode">
+            <label for="schYear">대상 연도 (Year) *</label>
+            <select
+              id="schYear"
+              v-model="form.schYear"
+              required
+              :disabled="isSubmitting"
+            >
+              <option v-for="y in yearOptions" :key="y" :value="String(y)">
+                {{ y }}년
+              </option>
+            </select>
+          </div>
+          <div class="form-group" v-if="!isEditMode">
+            <label for="schMonth">대상 월 (Month) *</label>
+            <select
+              id="schMonth"
+              v-model="form.schMonth"
+              required
+              :disabled="isSubmitting"
+            >
+              <option
+                v-for="m in 12"
+                :key="m"
+                :value="String(m).padStart(2, '0')"
+              >
+                {{ m }}월
+              </option>
+            </select>
+          </div>
+          <div class="form-group" v-if="isEditMode">
+            <label for="schDate">일정 일자 (Date) *</label>
+            <input
+              type="date"
+              id="schDate"
+              v-model="form.schDate"
+              required
+              :disabled="isSubmitting"
+            />
+          </div>
+          <div class="form-group">
+            <label for="schCode">일정 코드 (Schedule Code)</label>
+            <select
+              id="schCode"
+              v-model="form.schCode"
+              :disabled="isSubmitting"
+            >
+              <option value="">선택 안함</option>
+              <option
+                v-for="item in sys002Items"
+                :key="item.subCode"
+                :value="item.subCode"
+              >
+                {{ item.description || item.subCode }} ({{ item.subCode }})
+              </option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="useYn">사용 여부</label>
+            <select
+              id="useYn"
+              v-model.number="form.useYn"
+              :disabled="isSubmitting"
+            >
+              <option :value="1">사용</option>
+              <option :value="0">미사용</option>
+            </select>
+          </div>
+        </div>
+        <div class="p-4 border-t border-slate-200">
+          <button
+            type="submit"
+            class="btn-primary w-full"
+            :disabled="
+              isSubmitting ||
+              !form.schGroupCode ||
+              !form.userId ||
+              (isEditMode ? !form.schDate : !form.schYear || !form.schMonth)
+            "
+          >
+            {{
+              isSubmitting ? "처리 중..." : isEditMode ? "수정하기" : "등록하기"
+            }}
+          </button>
+        </div>
+      </form>
+    </section>
 
-    <ScheduleSearch
-      :search-params="searchParams"
-      :sys001-items="sys001Items"
-      :year-options="yearOptions"
-      :min-sch-date="minSchDate"
-      :max-sch-date="maxSchDate"
-      @search="handleSearch"
-    />
+    <!-- 검색 필터 (기존 ScheduleSearch) -->
+    <section class="card-section search-section">
+      <div class="search-grid">
+        <div class="form-group">
+          <label for="searchSchGroupCode">일정 그룹 (Group)</label>
+          <select id="searchSchGroupCode" v-model="searchParams.schGroupCode">
+            <option value="">전체</option>
+            <option
+              v-for="item in sys001Items"
+              :key="item.subCode"
+              :value="item.subCode"
+            >
+              {{ item.description || item.subCode }} ({{ item.subCode }})
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="searchUserId">사용자 ID</label>
+          <input
+            type="text"
+            id="searchUserId"
+            v-model="searchParams.userId"
+            placeholder="예: admin"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+        <div class="form-group">
+          <label for="searchSchYear">연도 (Year)</label>
+          <select id="searchSchYear" v-model="searchParams.schYear">
+            <option value="">전체</option>
+            <option v-for="y in yearOptions" :key="y" :value="String(y)">
+              {{ y }}년
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="searchSchMonth">월 (Month)</label>
+          <select id="searchSchMonth" v-model="searchParams.schMonth">
+            <option value="">전체</option>
+            <option
+              v-for="m in 12"
+              :key="m"
+              :value="String(m).padStart(2, '0')"
+            >
+              {{ m }}월
+            </option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="searchSchDate">일자 (Date)</label>
+          <input
+            type="date"
+            id="searchSchDate"
+            v-model="searchParams.schDate"
+            @keyup.enter="handleSearch"
+          />
+        </div>
+      </div>
+      <div class="search-actions">
+        <div class="date-summary">
+          <span class="summary-label">최초등록일:</span>
+          <span class="summary-value">{{ minSchDate }}</span>
+          <span class="summary-divider">|</span>
+          <span class="summary-label">최종등록일:</span>
+          <span class="summary-value">{{ maxSchDate }}</span>
+        </div>
+        <button class="btn-primary search-btn" @click="handleSearch">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="icon-sm"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+          조회
+        </button>
+      </div>
+    </section>
 
-    <ScheduleList
-      :schedules="schedules"
-      :is-submitting="isSubmitting"
-      :current-page="currentPage"
-      :total-pages="totalPages"
-      @edit="editSchedule"
-      @delete="deleteSchedule"
-      @page-change="handlePageChange"
-    />
+    <!-- 일정 목록 (기존 ScheduleList) -->
+    <section class="card-section list-section">
+      <div class="card-header list-header">
+        <h2 class="section-title">등록된 일정 마스터 목록</h2>
+        <span class="badge badge-yellow">{{ schedules.length }}건</span>
+      </div>
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="w-16">ID</th>
+              <th>그룹 코드</th>
+              <th>사용자 ID</th>
+              <th>일자</th>
+              <th>일정 코드</th>
+              <th class="w-24 text-center">상태</th>
+              <th class="w-24 text-center">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in schedules" :key="item.id">
+              <td>{{ item.id }}</td>
+              <td class="font-bold text-purple-700">{{ item.schGroupCode }}</td>
+              <td class="font-bold text-blue-700">{{ item.userId }}</td>
+              <td>{{ formatDateOnly(item.schDate) }}</td>
+              <td>{{ item.schCode || "-" }}</td>
+              <td class="text-center">
+                <span
+                  :class="[
+                    'status-badge',
+                    item.useYn === 1 ? 'active' : 'inactive',
+                  ]"
+                >
+                  {{ item.useYn === 1 ? "사용" : "미사용" }}
+                </span>
+              </td>
+              <td class="text-center">
+                <div class="action-buttons">
+                  <button
+                    @click="editSchedule(item)"
+                    class="btn-icon"
+                    :disabled="isSubmitting"
+                    title="수정"
+                  >
+                    ✏️
+                  </button>
+                  <button
+                    @click="deleteSchedule(item.id)"
+                    class="btn-icon"
+                    :disabled="isSubmitting"
+                    title="삭제"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="schedules.length === 0">
+              <td colspan="7" class="empty-state">등록된 일정이 없습니다.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination-wrapper" v-if="totalPages > 0">
+        <Pagination
+          :current-page="currentPage"
+          :total-pages="totalPages"
+          @page-change="handlePageChange"
+        />
+      </div>
+    </section>
   </div>
 </template>
 
 <script setup>
 import PageTitle from "@/components/PageTitle.vue";
-import ScheduleForm from "@/components/sys/schedule/ScheduleForm.vue";
-import ScheduleSearch from "@/components/sys/schedule/ScheduleSearch.vue";
-import ScheduleList from "@/components/sys/schedule/ScheduleList.vue";
+import Pagination from "@/components/Pagination.vue";
 import { useScheduleManagement } from "@/composables/sys/schedule/useScheduleManagement";
 
 const {
@@ -76,6 +341,12 @@ const {
   deleteSchedule,
   resetForm,
 } = useScheduleManagement();
+
+const formatDateOnly = (dateString) => {
+  if (!dateString) return "";
+  const d = new Date(dateString);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 </script>
 
 <style scoped>
@@ -83,5 +354,81 @@ const {
   color: #f59e0b;
   width: 1.5rem;
   height: 1.5rem;
+}
+.search-section {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+}
+.search-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+}
+.search-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+.date-summary {
+  font-size: 0.95rem;
+  color: #475569;
+  background: #f8fafc;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+.summary-label {
+  font-weight: 700;
+  color: #334155;
+}
+.summary-value {
+  font-weight: 600;
+  color: #2563eb;
+  margin-left: 0.25rem;
+}
+.summary-divider {
+  margin: 0 0.75rem;
+  color: #cbd5e1;
+}
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.5rem;
+}
+.data-table tr:hover td {
+  background-color: #f8fafc;
+}
+.text-purple-700 {
+  color: #7e22ce;
+}
+.text-blue-700 {
+  color: #1d4ed8;
+}
+.p-4 {
+  padding: 1rem;
+}
+.border-t {
+  border-top-width: 1px;
+}
+.border-slate-200 {
+  border-color: #e2e8f0;
+}
+@media (max-width: 1024px) {
+  .search-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .search-grid {
+    grid-template-columns: 1fr;
+  }
+  .search-actions {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }
 </style>
